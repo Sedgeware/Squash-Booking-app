@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd //c \"where node\")",
+      "Bash(cmd //c \"node --version\")"
+    ]
+  }
+}

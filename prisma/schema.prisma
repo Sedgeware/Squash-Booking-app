@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  password      String
+  phone         String?
+  avatarUrl     String?   // relative URL e.g. /uploads/avatars/xxx.jpg
+  role          String    @default("USER") // "USER" | "ADMIN"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  memberships   Membership[]
+  bookings      Booking[]
+
+  // Ladder relations
+  ladderPlayer          LadderPlayer?  @relation("UserToLadderPlayer")
+  approvedLadderPlayers LadderPlayer[] @relation("LadderApprovedBy")
+}
+
+model Membership {
+  id                   String   @id @default(cuid())
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status               String   @default("ACTIVE") // "ACTIVE" | "INACTIVE" | "CANCELLED"
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  currentPeriodStart   DateTime @default(now())
+  currentPeriodEnd     DateTime
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model Booking {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  court     Int // 1 or 2
+  date      String // "YYYY-MM-DD"
+  startTime Int // 6–21 (hour)
+  endTime   Int // 7–22 (always startTime + 1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([court, date, startTime])
+}
+
+// ---------------------------------------------------------------------------
+// Ladder
+// ---------------------------------------------------------------------------
+
+model LadderPlayer {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  user         User      @relation("UserToLadderPlayer", fields: [userId], references: [id], onDelete: Cascade)
+  status       String    @default("PENDING") // "PENDING" | "ACTIVE" | "INACTIVE" | "REMOVED"
+  rank         Int? // null unless ACTIVE
+  joinedAt     DateTime  @default(now())
+  approvedAt   DateTime?
+  approvedById String?
+  approvedBy   User?     @relation("LadderApprovedBy", fields: [approvedById], references: [id])
+  notes        String?
+  showPhone    Boolean   @default(true)
+  showEmail    Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  outgoingChallenges LadderChallenge[] @relation("LadderChallenger")
+  incomingChallenges LadderChallenge[] @relation("LadderChallenged")
+  wonChallenges      LadderChallenge[] @relation("LadderWinner")
+  history            LadderHistory[]
+}
+
+model LadderChallenge {
+  id           String    @id @default(cuid())
+  challengerId String
+  challengedId String
+  status       String    @default("PENDING") // "PENDING" | "ACCEPTED" | "DECLINED" | "COMPLETED" | "CANCELLED"
+  createdAt    DateTime  @default(now())
+  respondedAt         DateTime?
+  completedAt         DateTime?
+  winnerId            String? // LadderPlayer id
+  score               String?
+  notes               String?
+  hiddenByChallenger  Boolean   @default(false)
+  hiddenByChallenged  Boolean   @default(false)
+  updatedAt           DateTime  @updatedAt
+
+  challenger LadderPlayer  @relation("LadderChallenger", fields: [challengerId], references: [id])
+  challenged LadderPlayer  @relation("LadderChallenged", fields: [challengedId], references: [id])
+  winner     LadderPlayer? @relation("LadderWinner", fields: [winnerId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// App Settings (feature flags and admin-controlled config)
+// ---------------------------------------------------------------------------
+
+model AppSetting {
+  key       String   @id   // e.g. "bookingsEnabled"
+  value     String         // stored as string: "true" / "false"
+  updatedAt DateTime @updatedAt
+}
+
+model LadderHistory {
+  id             String       @id @default(cuid())
+  ladderPlayerId String
+  ladderPlayer   LadderPlayer @relation(fields: [ladderPlayerId], references: [id], onDelete: Cascade)
+  oldRank        Int?
+  newRank        Int?
+  reason         String
+  createdAt      DateTime     @default(now())
+  createdById    String?
+}
