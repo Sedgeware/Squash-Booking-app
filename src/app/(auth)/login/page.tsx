@@ -35,7 +35,7 @@ export default function LoginPage() {
   return (
     <>
       <h2 className="text-xl font-bold text-gray-900 mb-1">Sign in</h2>
-      <p className="text-sm text-gray-500 mb-6">Welcome back to Tamworth Squash Club</p>
+      <p className="text-sm text-gray-500 mb-6">Sign in to manage your challenges and standings</p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
