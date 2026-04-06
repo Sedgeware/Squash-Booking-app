@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { OPEN_STATUSES, getChallengeState } from "@/lib/ladder";
+import { sendChallengeReceivedEmail } from "@/lib/email";
 
 /**
  * POST /api/ladder/challenge
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
   // Load challenger's record
   const challenger = await prisma.ladderPlayer.findUnique({
     where: { userId: session.user.id },
-    select: { id: true, rank: true, status: true },
+    select: { id: true, rank: true, status: true, user: { select: { name: true } } },
   });
 
   if (!challenger || challenger.status !== "ACTIVE") {
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
   // Load challenged player
   const challenged = await prisma.ladderPlayer.findUnique({
     where: { id: challengedLadderPlayerId },
-    select: { id: true, rank: true, status: true },
+    select: { id: true, rank: true, status: true, user: { select: { name: true, email: true } } },
   });
 
   if (!challenged || challenged.status !== "ACTIVE") {
@@ -79,6 +80,14 @@ export async function POST(req: Request) {
       status: "PENDING",
     },
   });
+
+  // Notify the challenged player — fire and forget, never block the response
+  sendChallengeReceivedEmail({
+    to: challenged.user.email,
+    challengedName: challenged.user.name,
+    challengerName: challenger.user.name,
+    challengerRank: challenger.rank,
+  }).catch((err) => console.error("[email] challenge-received notification failed:", err));
 
   return NextResponse.json({ challenge }, { status: 201 });
 }

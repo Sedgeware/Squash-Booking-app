@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendChallengeAcceptedEmail, sendChallengeDeclinedEmail } from "@/lib/email";
 
 /**
  * POST /api/ladder/challenge/[id]/respond
@@ -28,7 +29,8 @@ export async function POST(
   const challenge = await prisma.ladderChallenge.findUnique({
     where: { id },
     include: {
-      challenged: { select: { userId: true } },
+      challenger: { select: { rank: true, user: { select: { name: true, email: true } } } },
+      challenged: { select: { rank: true, userId: true, user: { select: { name: true } } } },
     },
   });
 
@@ -52,6 +54,22 @@ export async function POST(
       respondedAt: new Date(),
     },
   });
+
+  // Notify the original challenger — fire and forget
+  if (action === "ACCEPT") {
+    sendChallengeAcceptedEmail({
+      to: challenge.challenger.user.email,
+      challengerName: challenge.challenger.user.name,
+      challengedName: challenge.challenged.user.name,
+      challengedRank: challenge.challenged.rank,
+    }).catch((err) => console.error("[email] challenge-accepted notification failed:", err));
+  } else {
+    sendChallengeDeclinedEmail({
+      to: challenge.challenger.user.email,
+      challengerName: challenge.challenger.user.name,
+      challengedName: challenge.challenged.user.name,
+    }).catch((err) => console.error("[email] challenge-declined notification failed:", err));
+  }
 
   return NextResponse.json({ challenge: updated });
 }
