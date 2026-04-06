@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getSetting, setSetting, settingBool } from "@/lib/settings";
 
-const ALLOWED_KEYS = ["bookingsEnabled"] as const;
+const ALLOWED_KEYS = ["bookingsEnabled", "membershipsEnabled"] as const;
 type AllowedKey = (typeof ALLOWED_KEYS)[number];
 
 /**
