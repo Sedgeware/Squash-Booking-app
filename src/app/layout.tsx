@@ -6,8 +6,13 @@ import { SessionProvider } from "@/components/providers/SessionProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Tamworth Squash Club",
-  description: "Book your court at Tamworth Squash Club",
+  title: "Tamworth Squash Ladder",
+  description: "Join the Tamworth Squash Ladder, challenge players, and climb the rankings.",
+  openGraph: {
+    title: "Tamworth Squash Ladder",
+    description: "Join the Tamworth Squash Ladder, challenge players, and climb the rankings.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
