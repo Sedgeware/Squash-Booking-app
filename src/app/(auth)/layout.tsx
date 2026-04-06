@@ -12,7 +12,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <h1 className="text-2xl font-bold text-white">Tamworth Squash Club</h1>
           <p className="text-brand-300 text-sm mt-1">Court booking portal</p>
         </div>
-        <div className="bg-white rounded-2xl shadow-2xl p-8">{children}</div>
+        <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8">{children}</div>
       </div>
     </div>
   );

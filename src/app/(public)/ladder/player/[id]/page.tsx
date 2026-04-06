@@ -207,7 +207,7 @@ export default async function PlayerProfilePage({
 
       {/* ── Hero card ── */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-6 flex items-start justify-between gap-4">
+        <div className="px-6 py-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           {/* Avatar + name */}
           <div className="flex items-center gap-4">
             <Avatar
@@ -236,7 +236,7 @@ export default async function PlayerProfilePage({
               <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
                 Current rank
               </p>
-              <p className="text-5xl font-black text-brand-700 leading-none mt-1">
+              <p className="text-4xl sm:text-5xl font-black text-brand-700 leading-none mt-1">
                 #{player.rank}
               </p>
             </div>

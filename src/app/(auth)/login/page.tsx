@@ -25,7 +25,7 @@ export default function LoginPage() {
 
     setLoading(false);
 
-    if (result?.error) {
+    if (result?.error || !result?.ok) {
       setError("Invalid email or password.");
     } else {
       router.push("/dashboard");

@@ -27,7 +27,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         avatarUrl={dbUser?.avatarUrl ?? null}
       />
       <main className="flex-1 overflow-y-auto">
-        <div className="p-8">{children}</div>
+        <div className="pt-14 md:pt-0 p-4 sm:p-6 lg:p-8">{children}</div>
       </main>
     </div>
   );

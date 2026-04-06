@@ -249,7 +249,7 @@ export default async function DashboardPage() {
 
       {/* ── Admin summary bar ── */}
       {isAdmin && adminSummary && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <AdminStatCard
             label="Pending approvals"
             value={adminSummary.pendingCount}
