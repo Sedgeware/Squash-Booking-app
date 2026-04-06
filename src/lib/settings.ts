@@ -6,6 +6,7 @@ import { prisma } from "./prisma";
  */
 const DEFAULTS: Record<string, string> = {
   bookingsEnabled: "true",
+  membershipsEnabled: "true",
 };
 
 /** Read a single setting. Falls back to DEFAULTS then "true". */

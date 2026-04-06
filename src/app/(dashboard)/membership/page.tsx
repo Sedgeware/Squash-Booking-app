@@ -2,11 +2,20 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getSetting, settingBool } from "@/lib/settings";
 import { SubscribeButton } from "./SubscribeButton";
 
 export default async function MembershipPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
+
+  const isAdmin = session.user.role === "ADMIN";
+  const membershipsEnabled = settingBool(await getSetting("membershipsEnabled"));
+
+  // Non-admins are blocked when the memberships module is disabled
+  if (!membershipsEnabled && !isAdmin) {
+    redirect("/dashboard");
+  }
 
   const membership = await prisma.membership.findFirst({
     where: { userId: session.user.id },

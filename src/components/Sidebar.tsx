@@ -22,6 +22,7 @@ const adminLinks = [
 
 interface SidebarProps {
   bookingsEnabled?: boolean;
+  membershipsEnabled?: boolean;
   userName?: string;
   userEmail?: string;
   avatarUrl?: string | null;
@@ -33,6 +34,7 @@ function SidebarContent({
   isLoggedIn,
   isAdmin,
   showBookings,
+  showMemberships,
   pathname,
   displayName,
   displayEmail,
@@ -42,6 +44,7 @@ function SidebarContent({
   isLoggedIn: boolean;
   isAdmin: boolean;
   showBookings: boolean;
+  showMemberships: boolean;
   pathname: string;
   displayName: string;
   displayEmail: string;
@@ -53,6 +56,7 @@ function SidebarContent({
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {isLoggedIn && mainLinks.map(({ href, label, icon: Icon }) => {
           if (href === "/booking" && !showBookings) return null;
+          if (href === "/membership" && !showMemberships) return null;
           return (
             <NavLink key={href} href={href} label={label}
               icon={<Icon className="h-5 w-5 flex-shrink-0" />}
@@ -135,7 +139,7 @@ function SidebarContent({
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-export function Sidebar({ bookingsEnabled = true, userName, userEmail, avatarUrl }: SidebarProps) {
+export function Sidebar({ bookingsEnabled = true, membershipsEnabled = true, userName, userEmail, avatarUrl }: SidebarProps) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -148,9 +152,10 @@ export function Sidebar({ bookingsEnabled = true, userName, userEmail, avatarUrl
   const displayName = userName || session?.user?.name || "";
   const displayEmail = userEmail || session?.user?.email || "";
   const showBookings = bookingsEnabled || isAdmin;
+  const showMemberships = membershipsEnabled || isAdmin;
 
   const sharedContentProps = {
-    isLoggedIn, isAdmin, showBookings, pathname,
+    isLoggedIn, isAdmin, showBookings, showMemberships, pathname,
     displayName, displayEmail, avatarUrl,
   };
 

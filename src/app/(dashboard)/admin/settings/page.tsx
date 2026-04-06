@@ -1,14 +1,18 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
-import { getSetting, settingBool } from "@/lib/settings";
+import { getSettings, settingBool } from "@/lib/settings";
 import { ModuleToggle } from "./ModuleToggle";
 
 export default async function AdminSettingsPage() {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "ADMIN") redirect("/dashboard");
 
-  const bookingsEnabled = settingBool(await getSetting("bookingsEnabled"));
+  const { bookingsEnabled: bookingsRaw, membershipsEnabled: membershipsRaw } =
+    await getSettings(["bookingsEnabled", "membershipsEnabled"]);
+
+  const bookingsEnabled = settingBool(bookingsRaw);
+  const membershipsEnabled = settingBool(membershipsRaw);
 
   return (
     <div className="space-y-8 max-w-2xl">
@@ -32,6 +36,13 @@ export default async function AdminSettingsPage() {
           description="Allow members to view and book squash courts. When disabled, the booking module is hidden from members and direct access is blocked. Admins can still access bookings."
           settingKey="bookingsEnabled"
           initialValue={bookingsEnabled}
+        />
+
+        <ModuleToggle
+          label="Memberships"
+          description="Allow members to view and manage their club membership. When disabled, the membership module is hidden from members and direct access is blocked. Admins can still access memberships."
+          settingKey="membershipsEnabled"
+          initialValue={membershipsEnabled}
         />
       </section>
     </div>

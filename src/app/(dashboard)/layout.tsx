@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getSetting, settingBool } from "@/lib/settings";
+import { getSettings, settingBool } from "@/lib/settings";
 import { Sidebar } from "@/components/Sidebar";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -16,12 +16,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
     select: { name: true, avatarUrl: true },
   });
 
-  const bookingsEnabled = settingBool(await getSetting("bookingsEnabled"));
+  const { bookingsEnabled: bookingsRaw, membershipsEnabled: membershipsRaw } =
+    await getSettings(["bookingsEnabled", "membershipsEnabled"]);
+
+  const bookingsEnabled = settingBool(bookingsRaw);
+  const membershipsEnabled = settingBool(membershipsRaw);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar
         bookingsEnabled={bookingsEnabled}
+        membershipsEnabled={membershipsEnabled}
         userName={dbUser?.name ?? session.user.name ?? ""}
         userEmail={session.user.email ?? ""}
         avatarUrl={dbUser?.avatarUrl ?? null}
