@@ -176,9 +176,6 @@ export function LadderStandings({
                               You
                             </span>
                           )}
-                          {idx === 0 && !isMe && (
-                            <span className="text-yellow-500 text-sm">👑</span>
-                          )}
                         </div>
                         <FormDots form={player.form} />
                       </div>
