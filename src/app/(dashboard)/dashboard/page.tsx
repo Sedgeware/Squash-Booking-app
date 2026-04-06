@@ -225,13 +225,6 @@ export default async function DashboardPage() {
   feedEvents.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   const feed = feedEvents.slice(0, 8);
 
-  // ── Membership (for non-ladder users only — just need to know if active) ──
-  const membership = isActiveLadder
-    ? null
-    : await prisma.membership.findFirst({
-        where: { userId, status: "ACTIVE", currentPeriodEnd: { gte: new Date() } },
-      });
-
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-8 max-w-3xl">
@@ -414,29 +407,12 @@ export default async function DashboardPage() {
             {/* Status-specific CTAs */}
             {!ladderPlayer && (
               <div className="pt-2">
-                {membership ? (
-                  <Link
-                    href="/ladder"
-                    className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
-                  >
-                    Join the ladder →
-                  </Link>
-                ) : (
-                  <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
-                    <p className="text-sm font-semibold text-amber-900">
-                      Membership required
-                    </p>
-                    <p className="text-xs text-amber-700 mt-0.5">
-                      You need an active membership to join the ladder.
-                    </p>
-                    <Link
-                      href="/membership"
-                      className="mt-2 inline-block text-xs font-semibold text-amber-800 underline"
-                    >
-                      Subscribe for £25/month →
-                    </Link>
-                  </div>
-                )}
+                <Link
+                  href="/ladder"
+                  className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
+                >
+                  Join the ladder →
+                </Link>
               </div>
             )}
 

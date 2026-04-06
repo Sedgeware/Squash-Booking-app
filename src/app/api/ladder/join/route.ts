@@ -13,17 +13,6 @@ export async function POST() {
 
   const userId = session.user.id;
 
-  // Check for active membership
-  const membership = await prisma.membership.findFirst({
-    where: { userId, status: "ACTIVE", currentPeriodEnd: { gte: new Date() } },
-  });
-  if (!membership) {
-    return NextResponse.json(
-      { error: "An active club membership is required to join the ladder." },
-      { status: 403 }
-    );
-  }
-
   const existing = await prisma.ladderPlayer.findUnique({ where: { userId } });
 
   if (existing) {
