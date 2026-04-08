@@ -2,15 +2,21 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Query-param banners (set by register redirect or verify-email redirect)
+  const registered = searchParams.get("registered") === "1";
+  const verified = searchParams.get("verified") === "1";
+  const invalidToken = searchParams.get("error") === "invalid-token";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,7 +31,9 @@ export default function LoginPage() {
 
     setLoading(false);
 
-    if (result?.error || !result?.ok) {
+    if (result?.error === "EmailNotVerified") {
+      setError("Please verify your email address before signing in. Check your inbox for the verification link.");
+    } else if (result?.error || !result?.ok) {
       setError("Invalid email or password.");
     } else {
       router.push("/dashboard");
@@ -36,6 +44,23 @@ export default function LoginPage() {
     <>
       <h2 className="text-xl font-bold text-gray-900 mb-1">Sign in</h2>
       <p className="text-sm text-gray-500 mb-6">Sign in to manage your challenges and standings</p>
+
+      {/* Query-param banners */}
+      {registered && (
+        <div className="mb-4 rounded-lg bg-brand-50 border border-brand-200 px-3 py-2.5 text-sm text-brand-800">
+          Account created! Check your email and click the verification link before signing in.
+        </div>
+      )}
+      {verified && (
+        <div className="mb-4 rounded-lg bg-brand-50 border border-brand-200 px-3 py-2.5 text-sm text-brand-800">
+          Email verified! You can now sign in.
+        </div>
+      )}
+      {invalidToken && (
+        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-700">
+          That verification link is invalid or has already been used.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>

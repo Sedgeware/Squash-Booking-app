@@ -8,15 +8,17 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String
-  password      String
-  phone         String?
-  avatarUrl     String?   // relative URL e.g. /uploads/avatars/xxx.jpg
-  role          String    @default("USER") // "USER" | "ADMIN"
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String
+  password          String
+  phone             String?
+  avatarUrl         String?   // relative URL e.g. /uploads/avatars/xxx.jpg
+  role              String    @default("USER") // "USER" | "ADMIN"
+  emailVerified     DateTime?
+  verificationToken String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
   memberships   Membership[]
   bookings      Booking[]
 

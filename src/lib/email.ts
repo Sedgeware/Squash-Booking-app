@@ -205,6 +205,39 @@ export async function sendChallengeDeclinedEmail({
   });
 }
 
+/** Sent immediately after registration so the user can verify their email. */
+export async function sendVerificationEmail({
+  to,
+  name,
+  token,
+}: {
+  to: string;
+  name: string;
+  token: string;
+}): Promise<void> {
+  const verifyUrl = `${APP_URL}/api/auth/verify-email?token=${token}`;
+
+  const body = `
+    <h2 style="margin:0 0 16px;font-size:20px;color:#111827;">Verify your email address</h2>
+    <p style="margin:0 0 8px;font-size:15px;color:#374151;">Hi ${name},</p>
+    <p style="margin:0 0 0;font-size:15px;color:#374151;">
+      Thanks for signing up for the Tamworth Squash Ladder. Click the button below
+      to verify your email address and activate your account.
+    </p>
+  `;
+
+  await send({
+    to,
+    subject: "Verify your email – Tamworth Squash Ladder",
+    html: baseTemplate({
+      preheader: "Verify your email to activate your account",
+      body,
+      ctaUrl: verifyUrl,
+      ctaLabel: "Verify email address",
+    }),
+  });
+}
+
 /** Sent to a new user after they create an account. */
 export async function sendWelcomeEmail({
   to,
