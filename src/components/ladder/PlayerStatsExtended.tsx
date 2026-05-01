@@ -5,10 +5,17 @@ import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export interface FormResult {
+  outcome: "W" | "L";
+  opponentName: string;
+  score: string | null;
+}
+
 export interface H2HMatch {
   challengerId: string;
   challengedId: string;
   winnerId: string | null;
+  score: string | null;
   completedAt: string; // ISO
 }
 
@@ -21,17 +28,17 @@ export interface H2HPlayer {
 interface Props {
   /** LadderPlayer.id of the profile being viewed */
   playerId: string;
-  /** Last 5 completed matches oldest→newest (left to right). null = placeholder */
-  formBadges: Array<"W" | "L" | null>;
+  /** Last 5 completed matches, newest first. null = placeholder */
+  formResults: Array<FormResult | null>;
   rivalName: string | null;
   rivalMatches: number;
-  /** ISO string of most recent completed match, or null */
+  /** ISO string of most recent match vs the rival */
+  rivalLastDate: string | null;
+  /** ISO string of most recent completed match */
   lastMatchDate: string | null;
-  /** ISO string of any most recent challenge activity (any status), or null */
+  /** ISO string of most recent challenge activity (any status) */
   lastActivityDate: string | null;
-  /** All completed matches involving this player — used for H2H calc */
   h2hMatches: H2HMatch[];
-  /** Active ladder players (excluding this player) — H2H dropdown options */
   h2hPlayers: H2HPlayer[];
 }
 
@@ -48,9 +55,10 @@ function daysAgo(iso: string): string {
 
 export function PlayerStatsExtended({
   playerId,
-  formBadges,
+  formResults,
   rivalName,
   rivalMatches,
+  rivalLastDate,
   lastMatchDate,
   lastActivityDate,
   h2hMatches,
@@ -58,7 +66,9 @@ export function PlayerStatsExtended({
 }: Props) {
   const [selectedOpponentId, setSelectedOpponentId] = useState("");
 
-  // ── H2H computation (runs on selection change) ───────────────────────────
+  // ── H2H computation (pure, runs on every render after selection) ─────────
+  const selectedOpponent = h2hPlayers.find((p) => p.id === selectedOpponentId) ?? null;
+
   const h2hStats = (() => {
     if (!selectedOpponentId) return null;
 
@@ -69,7 +79,14 @@ export function PlayerStatsExtended({
     );
 
     if (relevant.length === 0) {
-      return { played: 0, wins: 0, losses: 0, winRate: null, lastResult: null as "W" | "L" | null };
+      return {
+        played: 0,
+        wins: 0,
+        losses: 0,
+        winRate: null as number | null,
+        lastResult: null as "W" | "L" | null,
+        lastScore: null as string | null,
+      };
     }
 
     const wins = relevant.filter((m) => m.winnerId === playerId).length;
@@ -81,8 +98,9 @@ export function PlayerStatsExtended({
       (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
     );
     const lastResult: "W" | "L" = sorted[0].winnerId === playerId ? "W" : "L";
+    const lastScore = sorted[0].score;
 
-    return { played: relevant.length, wins, losses, winRate, lastResult };
+    return { played: relevant.length, wins, losses, winRate, lastResult, lastScore };
   })();
 
   // ────────────────────────────────────────────────────────────────────────────
@@ -97,24 +115,35 @@ export function PlayerStatsExtended({
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
             Form
           </p>
-          <div className="flex gap-1.5">
-            {formBadges.map((badge, i) =>
-              badge !== null ? (
-                <span
-                  key={i}
-                  className={cn(
-                    "inline-flex items-center justify-center w-9 h-9 rounded-lg text-sm font-bold flex-shrink-0",
-                    badge === "W"
-                      ? "bg-brand-100 text-brand-700 border border-brand-200"
-                      : "bg-red-50 text-red-500 border border-red-200"
-                  )}
-                >
-                  {badge}
-                </span>
+          <div className="flex gap-2">
+            {formResults.map((result, i) =>
+              result !== null ? (
+                <div key={i} className="relative group">
+                  {/* Badge */}
+                  <span
+                    className={cn(
+                      "inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold cursor-default select-none",
+                      result.outcome === "W"
+                        ? "bg-brand-600 text-white"
+                        : "bg-red-500 text-white"
+                    )}
+                  >
+                    {result.outcome}
+                  </span>
+                  {/* Tooltip — pure CSS, no JS needed */}
+                  <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10">
+                    <div className="rounded-lg bg-gray-900 px-2.5 py-1.5 text-xs text-white shadow-xl whitespace-nowrap">
+                      {result.outcome === "W" ? "Beat" : "Lost to"} {result.opponentName}
+                      {result.score ? ` (${result.score})` : ""}
+                    </div>
+                    {/* Caret */}
+                    <div className="mx-auto h-2 w-2 -mt-1 rotate-45 bg-gray-900" />
+                  </div>
+                </div>
               ) : (
                 <span
                   key={i}
-                  className="inline-flex items-center justify-center w-9 h-9 rounded-lg text-sm font-medium bg-gray-50 text-gray-300 border border-gray-100 flex-shrink-0"
+                  className="inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-medium bg-gray-100 text-gray-300 border border-gray-200 select-none"
                 >
                   –
                 </span>
@@ -131,9 +160,12 @@ export function PlayerStatsExtended({
           </p>
           {rivalName ? (
             <>
-              <p className="text-sm font-semibold text-gray-800">{rivalName}</p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {rivalMatches} match{rivalMatches !== 1 ? "es" : ""} played together
+              <p className="text-sm font-semibold text-gray-800">
+                🔥 {rivalName}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                {rivalMatches} match{rivalMatches !== 1 ? "es" : ""}
+                {rivalLastDate ? ` · Last played ${daysAgo(rivalLastDate)}` : ""}
               </p>
             </>
           ) : (
@@ -149,13 +181,13 @@ export function PlayerStatsExtended({
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <p className="text-xs font-medium text-gray-500">Last match played</p>
+            <p className="text-xs font-medium text-gray-500">Last match</p>
             <p className="text-sm font-semibold text-gray-800 mt-0.5">
               {lastMatchDate ? daysAgo(lastMatchDate) : "No matches yet"}
             </p>
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-500">Last challenge activity</p>
+            <p className="text-xs font-medium text-gray-500">Last challenge</p>
             <p className="text-sm font-semibold text-gray-800 mt-0.5">
               {lastActivityDate ? daysAgo(lastActivityDate) : "No activity yet"}
             </p>
@@ -196,6 +228,15 @@ export function PlayerStatsExtended({
             </p>
           ) : (
             <div className="space-y-3">
+              {/* Record summary line */}
+              <p className="text-sm text-gray-500">
+                Record:{" "}
+                <span className="font-bold text-gray-900">
+                  {h2hStats.wins}–{h2hStats.losses}
+                </span>
+              </p>
+
+              {/* Stat tiles */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <MiniStat label="Played" value={h2hStats.played} />
                 <MiniStat
@@ -218,17 +259,24 @@ export function PlayerStatsExtended({
                   }
                 />
               </div>
-              <p className="text-xs text-gray-400">
-                Last result:{" "}
-                <span
-                  className={cn(
-                    "font-semibold",
-                    h2hStats.lastResult === "W" ? "text-brand-600" : "text-red-500"
-                  )}
-                >
-                  {h2hStats.lastResult === "W" ? "Win" : "Loss"}
-                </span>
-              </p>
+
+              {/* Last result — full description */}
+              {h2hStats.lastResult && selectedOpponent && (
+                <p className="text-xs text-gray-400">
+                  Last result:{" "}
+                  <span
+                    className={cn(
+                      "font-semibold",
+                      h2hStats.lastResult === "W" ? "text-brand-600" : "text-red-500"
+                    )}
+                  >
+                    {h2hStats.lastResult === "W" ? "Beat" : "Lost to"}{" "}
+                    {selectedOpponent.rank !== null ? `#${selectedOpponent.rank} ` : ""}
+                    {selectedOpponent.name}
+                    {h2hStats.lastScore ? ` (${h2hStats.lastScore})` : ""}
+                  </span>
+                </p>
+              )}
             </div>
           )
         )}
@@ -238,7 +286,7 @@ export function PlayerStatsExtended({
   );
 }
 
-// ─── Mini stat tile (H2H grid) ────────────────────────────────────────────────
+// ─── Mini stat tile ───────────────────────────────────────────────────────────
 
 function MiniStat({
   label,

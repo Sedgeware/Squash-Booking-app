@@ -89,6 +89,10 @@ export function RankChart({ data }: Props) {
   // Build area fill path (line → bottom-right → bottom-left → close)
   const first = points[0];
   const last = points[points.length - 1];
+
+  // Best rank = lowest rank number; used for gold highlight
+  const bestRankValue = Math.min(...points.map((p) => p.rank));
+  const bestIdx = points.findIndex((p) => p.rank === bestRankValue);
   const areaPath =
     `M ${first.x},${first.y} ` +
     points
@@ -167,34 +171,55 @@ export function RankChart({ data }: Props) {
         points={polyline}
         fill="none"
         stroke="#22c55e"
-        strokeWidth="2.5"
+        strokeWidth="3"
         strokeLinejoin="round"
         strokeLinecap="round"
       />
 
-      {/* Data points */}
-      {points.map((p, i) => (
-        <circle
-          key={i}
-          cx={p.x}
-          cy={p.y}
-          r="4"
-          fill="white"
-          stroke="#22c55e"
-          strokeWidth="2"
-        />
-      ))}
+      {/* Data points — white rings with tooltip */}
+      {points.map((p, i) => {
+        const dateLabel = new Date(p.date).toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "short",
+        });
+        return (
+          <circle key={i} cx={p.x} cy={p.y} r="4" fill="white" stroke="#22c55e" strokeWidth="2">
+            <title>{dateLabel} — Rank #{p.rank}</title>
+          </circle>
+        );
+      })}
 
-      {/* Highlight the last point */}
-      {points.length > 0 && (
+      {/* Gold ring on best-rank point */}
+      {bestIdx >= 0 && (
         <circle
-          cx={last.x}
-          cy={last.y}
-          r="5"
-          fill="#22c55e"
-          stroke="white"
-          strokeWidth="2"
-        />
+          cx={points[bestIdx].x}
+          cy={points[bestIdx].y}
+          r="7"
+          fill="none"
+          stroke="#f59e0b"
+          strokeWidth="2.5"
+        >
+          <title>
+            {new Date(points[bestIdx].date).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+            })}{" "}
+            — Rank #{points[bestIdx].rank} (best)
+          </title>
+        </circle>
+      )}
+
+      {/* Highlight the last (current) point */}
+      {points.length > 0 && (
+        <circle cx={last.x} cy={last.y} r="5" fill="#22c55e" stroke="white" strokeWidth="2">
+          <title>
+            {new Date(last.date).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+            })}{" "}
+            — Rank #{last.rank} (current)
+          </title>
+        </circle>
       )}
     </svg>
   );

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { RankChart } from "@/components/ladder/RankChart";
 import { Avatar } from "@/components/Avatar";
 import { PlayerStatsExtended } from "@/components/ladder/PlayerStatsExtended";
-import type { H2HMatch, H2HPlayer } from "@/components/ladder/PlayerStatsExtended";
+import type { FormResult, H2HMatch, H2HPlayer } from "@/components/ladder/PlayerStatsExtended";
 
 // ─── Types passed to client components ───────────────────────────────────────
 
@@ -19,6 +19,7 @@ export interface ChartPoint {
 interface RecentResult {
   id: string;
   opponentName: string;
+  opponentRank: number | null;
   outcome: "win" | "loss";
   score: string | null;
   date: string;
@@ -73,8 +74,8 @@ export default async function PlayerProfilePage({
       OR: [{ challengerId: id }, { challengedId: id }],
     },
     include: {
-      challenger: { select: { id: true, user: { select: { name: true } } } },
-      challenged: { select: { id: true, user: { select: { name: true } } } },
+      challenger: { select: { id: true, rank: true, user: { select: { name: true } } } },
+      challenged: { select: { id: true, rank: true, user: { select: { name: true } } } },
     },
     orderBy: { completedAt: "desc" },
   });
@@ -124,11 +125,14 @@ export default async function PlayerProfilePage({
 
   // ── Extended stat derivations ─────────────────────────────────────────────
 
-  // Form: last 5 matches as W / L / null (null = no match at that slot)
-  const formBadges: Array<"W" | "L" | null> = Array.from({ length: 5 }, (_, i) => {
+  // Form: last 5 matches as FormResult | null (null = placeholder)
+  const formResults: Array<FormResult | null> = Array.from({ length: 5 }, (_, i) => {
     const c = completedChallenges[i];
     if (!c) return null;
-    return c.winnerId === id ? "W" : "L";
+    const won = c.winnerId === id;
+    const opponentName =
+      c.challengerId === id ? c.challenged.user.name : c.challenger.user.name;
+    return { outcome: won ? "W" : "L", opponentName, score: c.score };
   });
 
   // Rival: most-played opponent; tie-break by most recent shared match
@@ -159,11 +163,20 @@ export default async function PlayerProfilePage({
   // Last challenge activity date (any status)
   const lastActivityDate = lastChallengeActivity?.updatedAt.toISOString() ?? null;
 
+  // Most recent match vs the rival (for "last played" label)
+  const rivalLastDate = rivalEntry
+    ? (
+        completedChallenges[rivalEntry.firstIndex].completedAt ??
+        completedChallenges[rivalEntry.firstIndex].updatedAt
+      ).toISOString()
+    : null;
+
   // H2H matches — serialisable subset passed to the client component
   const h2hMatches: H2HMatch[] = completedChallenges.map((c) => ({
     challengerId: c.challengerId,
     challengedId: c.challengedId,
     winnerId: c.winnerId,
+    score: c.score,
     completedAt: (c.completedAt ?? c.updatedAt).toISOString(),
   }));
 
@@ -204,11 +217,11 @@ export default async function PlayerProfilePage({
     .slice(0, 5)
     .map((c) => {
       const won = c.winnerId === id;
-      const opponent =
-        c.challengerId === id ? c.challenged.user.name : c.challenger.user.name;
+      const opponent = c.challengerId === id ? c.challenged : c.challenger;
       return {
         id: c.id,
-        opponentName: opponent,
+        opponentName: opponent.user.name,
+        opponentRank: opponent.rank,
         outcome: won ? "win" : "loss",
         score: c.score,
         date: (c.completedAt ?? c.updatedAt).toISOString(),
@@ -388,9 +401,10 @@ export default async function PlayerProfilePage({
       {/* ── Extended stats: Form, Rival, Last Activity, Head-to-head ── */}
       <PlayerStatsExtended
         playerId={id}
-        formBadges={formBadges}
+        formResults={formResults}
         rivalName={rivalEntry?.name ?? null}
         rivalMatches={rivalEntry?.count ?? 0}
+        rivalLastDate={rivalLastDate}
         lastMatchDate={lastMatchDate}
         lastActivityDate={lastActivityDate}
         h2hMatches={h2hMatches}
@@ -443,6 +457,7 @@ export default async function PlayerProfilePage({
                   <div>
                     <p className="text-sm font-medium text-gray-800">
                       {r.outcome === "win" ? "Beat" : "Lost to"}{" "}
+                      {r.opponentRank !== null ? `#${r.opponentRank} ` : ""}
                       {r.opponentName}
                     </p>
                     {r.score && (
