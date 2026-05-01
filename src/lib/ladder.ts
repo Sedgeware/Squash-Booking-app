@@ -129,22 +129,39 @@ export async function movePlayer(
 }
 
 /**
- * Atomically swap the ranks of two ACTIVE players.
- * No unique constraint exists in SQLite so we can update both rows directly.
- * PostgreSQL migration note: if adding a unique index on rank, use a temp value.
+ * Slide the challenger up into the challenged player's position.
+ *
+ * Every player ranked between the two (inclusive of the challenged player's
+ * rank, exclusive of the challenger's rank) is shifted down by 1.
+ * The challenger then takes the challenged player's old rank.
+ *
+ * Example: challenger=4 beats challenged=2
+ *   Before: 1, 2, 3, 4(challenger)
+ *   Step 1: ranks 2 and 3 each +1  →  1, 3, 4, 4(challenger)
+ *   Step 2: challenger → 2         →  1, 2(challenger), 3, 4
  */
-export async function swapRanks(
+export async function slideRanks(
   tx: TxClient,
-  playerA: { id: string; rank: number },
-  playerB: { id: string; rank: number }
+  challenger: { id: string; rank: number },
+  challenged: { id: string; rank: number }
 ): Promise<void> {
-  await tx.ladderPlayer.update({
-    where: { id: playerA.id },
-    data: { rank: playerB.rank },
+  const targetRank = challenged.rank;  // rank the challenger will occupy
+  const fromRank   = challenger.rank;  // rank the challenger is leaving
+
+  // Shift every player in the band [targetRank, fromRank) down by 1
+  await tx.ladderPlayer.updateMany({
+    where: {
+      status: "ACTIVE",
+      rank: { gte: targetRank, lt: fromRank },
+      id: { not: challenger.id },
+    },
+    data: { rank: { increment: 1 } },
   });
+
+  // Place the challenger into the vacated top rank
   await tx.ladderPlayer.update({
-    where: { id: playerB.id },
-    data: { rank: playerA.rank },
+    where: { id: challenger.id },
+    data: { rank: targetRank },
   });
 }
 

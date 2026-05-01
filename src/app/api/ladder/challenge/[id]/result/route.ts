@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { swapRanks, addHistory } from "@/lib/ladder";
+import { slideRanks, addHistory } from "@/lib/ladder";
 
 /**
  * POST /api/ladder/challenge/[id]/result
@@ -90,8 +90,9 @@ export async function POST(
     });
 
     if (challengerWon) {
-      // Swap ranks
-      await swapRanks(
+      // Slide the challenger up into the challenged player's rank,
+      // shifting everyone between them down by 1.
+      await slideRanks(
         tx,
         { id: challenge.challenger.id, rank: challenge.challenger.rank! },
         { id: challenge.challenged.id, rank: challenge.challenged.rank! }
@@ -102,7 +103,7 @@ export async function POST(
         tx,
         challenge.challenger.id,
         challenge.challenger.rank!,
-        challenge.challenged.rank!,
+        challenge.challenged.rank!,          // challenger's new rank
         "Won challenge — moved up",
         session.user.id
       );
@@ -110,7 +111,7 @@ export async function POST(
         tx,
         challenge.challenged.id,
         challenge.challenged.rank!,
-        challenge.challenger.rank!,
+        challenge.challenged.rank! + 1,      // challenged drops exactly 1 place
         "Lost challenge — moved down",
         session.user.id
       );
