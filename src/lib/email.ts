@@ -1,6 +1,10 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialisation — avoids throwing at module load time during build
+// when RESEND_API_KEY is not present in the build environment.
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 const FROM = process.env.EMAIL_FROM ?? "Tamworth Squash Ladder <noreply@example.com>";
 const APP_URL = (process.env.NEXTAUTH_URL ?? "http://localhost:3000").replace(/\/$/, "");
@@ -89,7 +93,7 @@ async function send({
   html: string;
 }): Promise<void> {
   try {
-    const { error } = await resend.emails.send({ from: FROM, to, subject, html });
+    const { error } = await getResend().emails.send({ from: FROM, to, subject, html });
     if (error) {
       console.error("[email] Resend returned error:", error);
     }
