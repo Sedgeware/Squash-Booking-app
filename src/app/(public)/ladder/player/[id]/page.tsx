@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { cn } from "@/lib/utils";
 import { RankChart } from "@/components/ladder/RankChart";
 import { Avatar } from "@/components/Avatar";
+import { PlayerStatsExtended } from "@/components/ladder/PlayerStatsExtended";
+import type { H2HMatch, H2HPlayer } from "@/components/ladder/PlayerStatsExtended";
 
 // ─── Types passed to client components ───────────────────────────────────────
 
@@ -83,6 +85,21 @@ export default async function PlayerProfilePage({
     orderBy: { createdAt: "asc" },
   });
 
+  // ── Extended stats data ───────────────────────────────────────────────────
+  // Most recent challenge of any status — used for "last challenge activity"
+  const lastChallengeActivity = await prisma.ladderChallenge.findFirst({
+    where: { OR: [{ challengerId: id }, { challengedId: id }] },
+    orderBy: { updatedAt: "desc" },
+    select: { updatedAt: true },
+  });
+
+  // Active players for the H2H dropdown (exclude this player)
+  const activePlayers = await prisma.ladderPlayer.findMany({
+    where: { status: "ACTIVE", id: { not: id } },
+    select: { id: true, rank: true, user: { select: { name: true } } },
+    orderBy: { rank: "asc" },
+  });
+
   // ── Compute stats ─────────────────────────────────────────────────────────
   const played = completedChallenges.length;
   const wins = completedChallenges.filter((c) => c.winnerId === id).length;
@@ -104,6 +121,58 @@ export default async function PlayerProfilePage({
       break;
     }
   }
+
+  // ── Extended stat derivations ─────────────────────────────────────────────
+
+  // Form: last 5 matches as W / L / null (null = no match at that slot)
+  const formBadges: Array<"W" | "L" | null> = Array.from({ length: 5 }, (_, i) => {
+    const c = completedChallenges[i];
+    if (!c) return null;
+    return c.winnerId === id ? "W" : "L";
+  });
+
+  // Rival: most-played opponent; tie-break by most recent shared match
+  // completedChallenges is ordered desc (newest first), so first-seen index = most recent
+  const opponentMap = new Map<string, { name: string; count: number; firstIndex: number }>();
+  completedChallenges.forEach((c, index) => {
+    const opponentId = c.challengerId === id ? c.challengedId : c.challengerId;
+    const opponentName =
+      c.challengerId === id ? c.challenged.user.name : c.challenger.user.name;
+    const existing = opponentMap.get(opponentId);
+    if (existing) {
+      existing.count++;
+    } else {
+      opponentMap.set(opponentId, { name: opponentName, count: 1, firstIndex: index });
+    }
+  });
+  const rivalEntry =
+    [...opponentMap.values()].sort((a, b) =>
+      b.count !== a.count ? b.count - a.count : a.firstIndex - b.firstIndex
+    )[0] ?? null;
+
+  // Last match date (completedAt preferred, updatedAt fallback)
+  const lastMatchDate =
+    completedChallenges.length > 0
+      ? (completedChallenges[0].completedAt ?? completedChallenges[0].updatedAt).toISOString()
+      : null;
+
+  // Last challenge activity date (any status)
+  const lastActivityDate = lastChallengeActivity?.updatedAt.toISOString() ?? null;
+
+  // H2H matches — serialisable subset passed to the client component
+  const h2hMatches: H2HMatch[] = completedChallenges.map((c) => ({
+    challengerId: c.challengerId,
+    challengedId: c.challengedId,
+    winnerId: c.winnerId,
+    completedAt: (c.completedAt ?? c.updatedAt).toISOString(),
+  }));
+
+  // Active players for H2H dropdown — serialisable
+  const h2hPlayers: H2HPlayer[] = activePlayers.map((p) => ({
+    id: p.id,
+    name: p.user.name,
+    rank: p.rank,
+  }));
 
   // Best rank from history (lowest rank number = best position)
   const ranksInHistory = history
@@ -315,6 +384,18 @@ export default async function PlayerProfilePage({
           )}
         </div>
       )}
+
+      {/* ── Extended stats: Form, Rival, Last Activity, Head-to-head ── */}
+      <PlayerStatsExtended
+        playerId={id}
+        formBadges={formBadges}
+        rivalName={rivalEntry?.name ?? null}
+        rivalMatches={rivalEntry?.count ?? 0}
+        lastMatchDate={lastMatchDate}
+        lastActivityDate={lastActivityDate}
+        h2hMatches={h2hMatches}
+        h2hPlayers={h2hPlayers}
+      />
 
       {/* ── Rank history chart ── */}
       {chartPoints.length >= 2 ? (
