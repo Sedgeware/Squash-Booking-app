@@ -10,7 +10,7 @@ interface Props {
 const VIEWBOX_W = 600;
 const VIEWBOX_H = 220;
 const PAD_LEFT = 36; // room for Y-axis labels
-const PAD_RIGHT = 16;
+const PAD_RIGHT = 28;
 const PAD_TOP = 16;
 const PAD_BOTTOM = 32; // room for X-axis labels
 const CHART_W = VIEWBOX_W - PAD_LEFT - PAD_RIGHT;

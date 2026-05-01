@@ -137,7 +137,7 @@ export default async function PlayerProfilePage({
 
   // Rival: most-played opponent; tie-break by most recent shared match
   // completedChallenges is ordered desc (newest first), so first-seen index = most recent
-  const opponentMap = new Map<string, { name: string; count: number; firstIndex: number }>();
+  const opponentMap = new Map<string, { id: string; name: string; count: number; firstIndex: number }>();
   completedChallenges.forEach((c, index) => {
     const opponentId = c.challengerId === id ? c.challengedId : c.challengerId;
     const opponentName =
@@ -146,7 +146,7 @@ export default async function PlayerProfilePage({
     if (existing) {
       existing.count++;
     } else {
-      opponentMap.set(opponentId, { name: opponentName, count: 1, firstIndex: index });
+      opponentMap.set(opponentId, { id: opponentId, name: opponentName, count: 1, firstIndex: index });
     }
   });
   const rivalEntry =
@@ -186,6 +186,18 @@ export default async function PlayerProfilePage({
     name: p.user.name,
     rank: p.rank,
   }));
+
+  // Default H2H opponent: rival first, then most recent opponent — only if in the active dropdown list
+  const mostRecentOpponentId =
+    completedChallenges.length > 0
+      ? completedChallenges[0].challengerId === id
+        ? completedChallenges[0].challengedId
+        : completedChallenges[0].challengerId
+      : null;
+  const defaultOpponentId =
+    h2hPlayers.find((p) => p.id === rivalEntry?.id)?.id ??
+    h2hPlayers.find((p) => p.id === mostRecentOpponentId)?.id ??
+    "";
 
   // Best rank from history (lowest rank number = best position)
   const ranksInHistory = history
@@ -403,12 +415,14 @@ export default async function PlayerProfilePage({
         playerId={id}
         formResults={formResults}
         rivalName={rivalEntry?.name ?? null}
+        rivalPlayerId={rivalEntry?.id ?? null}
         rivalMatches={rivalEntry?.count ?? 0}
         rivalLastDate={rivalLastDate}
         lastMatchDate={lastMatchDate}
         lastActivityDate={lastActivityDate}
         h2hMatches={h2hMatches}
         h2hPlayers={h2hPlayers}
+        defaultOpponentId={defaultOpponentId}
       />
 
       {/* ── Rank history chart ── */}
@@ -448,8 +462,8 @@ export default async function PlayerProfilePage({
                     className={cn(
                       "inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold flex-shrink-0",
                       r.outcome === "win"
-                        ? "bg-brand-100 text-brand-700 border border-brand-200"
-                        : "bg-red-50 text-red-500 border border-red-200"
+                        ? "bg-brand-600 text-white"
+                        : "bg-red-500 text-white"
                     )}
                   >
                     {r.outcome === "win" ? "W" : "L"}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -31,6 +32,8 @@ interface Props {
   /** Last 5 completed matches, newest first. null = placeholder */
   formResults: Array<FormResult | null>;
   rivalName: string | null;
+  /** LadderPlayer.id of the rival — used to link to their profile */
+  rivalPlayerId: string | null;
   rivalMatches: number;
   /** ISO string of most recent match vs the rival */
   rivalLastDate: string | null;
@@ -40,6 +43,8 @@ interface Props {
   lastActivityDate: string | null;
   h2hMatches: H2HMatch[];
   h2hPlayers: H2HPlayer[];
+  /** Pre-selected opponent ID for H2H (rival, or most recent opponent) */
+  defaultOpponentId: string;
 }
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
@@ -57,14 +62,16 @@ export function PlayerStatsExtended({
   playerId,
   formResults,
   rivalName,
+  rivalPlayerId,
   rivalMatches,
   rivalLastDate,
   lastMatchDate,
   lastActivityDate,
   h2hMatches,
   h2hPlayers,
+  defaultOpponentId,
 }: Props) {
-  const [selectedOpponentId, setSelectedOpponentId] = useState("");
+  const [selectedOpponentId, setSelectedOpponentId] = useState(defaultOpponentId);
 
   // ── H2H computation (pure, runs on every render after selection) ─────────
   const selectedOpponent = h2hPlayers.find((p) => p.id === selectedOpponentId) ?? null;
@@ -118,7 +125,7 @@ export function PlayerStatsExtended({
           <div className="flex gap-2">
             {formResults.map((result, i) =>
               result !== null ? (
-                <div key={i} className="relative group">
+                <div key={i} className="relative group transition-transform duration-150 hover:scale-110">
                   {/* Badge */}
                   <span
                     className={cn(
@@ -150,7 +157,7 @@ export function PlayerStatsExtended({
               )
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-2">Last 5 completed matches</p>
+          <p className="text-xs text-gray-400 mt-2">Last 5 matches</p>
         </div>
 
         {/* Rival */}
@@ -158,11 +165,14 @@ export function PlayerStatsExtended({
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
             Rival
           </p>
-          {rivalName ? (
+          {rivalName && rivalPlayerId ? (
             <>
-              <p className="text-sm font-semibold text-gray-800">
+              <Link
+                href={`/ladder/player/${rivalPlayerId}`}
+                className="text-sm font-semibold text-gray-800 hover:text-brand-600 hover:underline underline-offset-2 transition-colors"
+              >
                 🔥 {rivalName}
-              </p>
+              </Link>
               <p className="text-xs text-gray-400 mt-1">
                 {rivalMatches} match{rivalMatches !== 1 ? "es" : ""}
                 {rivalLastDate ? ` · Last played ${daysAgo(rivalLastDate)}` : ""}
