@@ -29,15 +29,26 @@ export async function GET() {
     },
   } as const;
 
+  const ACTIVE_STATUSES = ["PENDING", "ACCEPTED"];
+  const HISTORICAL_STATUSES = ["DECLINED", "COMPLETED", "CANCELLED"];
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const historicalFilter = {
+    OR: [
+      { status: { in: ACTIVE_STATUSES } },
+      { status: { in: HISTORICAL_STATUSES }, updatedAt: { gte: thirtyDaysAgo } },
+    ],
+  } as const;
+
   const [outgoing, incoming] = await Promise.all([
     prisma.ladderChallenge.findMany({
-      where: { challengerId: ladderPlayer.id },
+      where: { challengerId: ladderPlayer.id, ...historicalFilter },
       include: { challenger: playerInclude, challenged: playerInclude },
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
     prisma.ladderChallenge.findMany({
-      where: { challengedId: ladderPlayer.id },
+      where: { challengedId: ladderPlayer.id, ...historicalFilter },
       include: { challenger: playerInclude, challenged: playerInclude },
       orderBy: { createdAt: "desc" },
       take: 20,

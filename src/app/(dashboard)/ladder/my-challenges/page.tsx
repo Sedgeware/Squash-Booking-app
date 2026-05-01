@@ -38,15 +38,26 @@ export default async function MyChallengesPage() {
     },
   } as const;
 
+  const ACTIVE_STATUSES = ["PENDING", "ACCEPTED"];
+  const HISTORICAL_STATUSES = ["DECLINED", "COMPLETED", "CANCELLED"];
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const historicalFilter = {
+    OR: [
+      { status: { in: ACTIVE_STATUSES } },
+      { status: { in: HISTORICAL_STATUSES }, updatedAt: { gte: thirtyDaysAgo } },
+    ],
+  } as const;
+
   const [outgoing, incoming] = await Promise.all([
     prisma.ladderChallenge.findMany({
-      where: { challengerId: ladderPlayer.id, hiddenByChallenger: false },
+      where: { challengerId: ladderPlayer.id, hiddenByChallenger: false, ...historicalFilter },
       include: { challenger: playerInclude, challenged: playerInclude },
       orderBy: { createdAt: "desc" },
       take: 20,
     }),
     prisma.ladderChallenge.findMany({
-      where: { challengedId: ladderPlayer.id, hiddenByChallenged: false },
+      where: { challengedId: ladderPlayer.id, hiddenByChallenged: false, ...historicalFilter },
       include: { challenger: playerInclude, challenged: playerInclude },
       orderBy: { createdAt: "desc" },
       take: 20,
