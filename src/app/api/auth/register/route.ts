@@ -34,10 +34,16 @@ export async function POST(req: Request) {
       },
     });
 
-    // Send verification email — fire and forget, never block the response
-    sendVerificationEmail({ to: user.email, name: user.name, token: verificationToken }).catch(
-      (err) => console.error("[email] verification email failed:", err)
-    );
+    // Await the verification email so Vercel does not terminate the function
+    // before Resend is called. Account is already created — a send failure
+    // is logged but does not roll back the signup.
+    console.log("[register] starting verification email for", user.email);
+    try {
+      await sendVerificationEmail({ to: user.email, name: user.name, token: verificationToken });
+      console.log("[register] verification email step completed for", user.email);
+    } catch (err) {
+      console.error("[register] verification email threw unexpectedly for", user.email, err);
+    }
 
     return NextResponse.json({ id: user.id, email: user.email }, { status: 201 });
   } catch {

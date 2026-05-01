@@ -92,13 +92,16 @@ async function send({
   subject: string;
   html: string;
 }): Promise<void> {
+  console.log(`[email] attempting send — to: ${to}, subject: "${subject}", from: ${FROM}`);
   try {
-    const { error } = await getResend().emails.send({ from: FROM, to, subject, html });
+    const { data, error } = await getResend().emails.send({ from: FROM, to, subject, html });
     if (error) {
-      console.error("[email] Resend returned error:", error);
+      console.error("[email] Resend returned error:", JSON.stringify(error));
+      return;
     }
+    console.log(`[email] send accepted by Resend — id: ${data?.id}, to: ${to}`);
   } catch (err) {
-    console.error("[email] Failed to send to", to, "–", err);
+    console.error("[email] exception calling Resend — to:", to, "error:", err);
   }
 }
 
