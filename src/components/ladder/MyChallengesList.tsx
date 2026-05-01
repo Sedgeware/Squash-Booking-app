@@ -24,6 +24,7 @@ interface Challenge {
   winnerId: string | null;
   score: string | null;
   notes: string | null;
+  declineReason: string | null;
   challenger: ChallengePlayer;
   challenged: ChallengePlayer;
 }
@@ -189,6 +190,8 @@ function ChallengeCard({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showResultForm, setShowResultForm] = useState(false);
+  const [showDeclineForm, setShowDeclineForm] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
 
   const opponent = direction === "outgoing" ? c.challenged : c.challenger;
   const badge = statusBadges[c.status] ?? statusBadges.PENDING;
@@ -198,14 +201,14 @@ function ChallengeCard({
   const needsAction = direction === "incoming" && c.status === "PENDING";
   const inProgress = c.status === "ACCEPTED";
 
-  async function handleRespond(action: "ACCEPT" | "DECLINE") {
+  async function handleRespond(action: "ACCEPT" | "DECLINE", reason?: string) {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(`/api/ladder/challenge/${c.id}/respond`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, ...(reason?.trim() ? { reason: reason.trim() } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) setError(data.error ?? "Action failed.");
@@ -311,6 +314,14 @@ function ChallengeCard({
           </div>
         </div>
 
+        {/* Decline reason */}
+        {c.status === "DECLINED" && c.declineReason && (
+          <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 text-sm">
+            <p className="text-xs font-semibold text-gray-500 mb-0.5">Reason given</p>
+            <p className="text-gray-600">{c.declineReason}</p>
+          </div>
+        )}
+
         {/* Completed result */}
         {c.status === "COMPLETED" && (
           <div className="rounded-xl bg-brand-50 border border-brand-100 px-4 py-3 text-sm space-y-0.5">
@@ -342,21 +353,61 @@ function ChallengeCard({
 
         {/* Incoming PENDING → Accept / Decline */}
         {direction === "incoming" && c.status === "PENDING" && (
-          <div className="flex gap-2 pt-1">
-            <button
-              onClick={() => handleRespond("ACCEPT")}
-              disabled={loading}
-              className="rounded-xl bg-brand-600 px-5 py-2 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
-            >
-              {loading ? "…" : "Accept"}
-            </button>
-            <button
-              onClick={() => handleRespond("DECLINE")}
-              disabled={loading}
-              className="rounded-xl border border-gray-300 px-5 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
-            >
-              {loading ? "…" : "Decline"}
-            </button>
+          <div className="pt-1 space-y-3">
+            {!showDeclineForm ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleRespond("ACCEPT")}
+                  disabled={loading}
+                  className="rounded-xl bg-brand-600 px-5 py-2 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
+                >
+                  {loading ? "…" : "Accept"}
+                </button>
+                <button
+                  onClick={() => setShowDeclineForm(true)}
+                  disabled={loading}
+                  className="rounded-xl border border-gray-300 px-5 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                >
+                  Decline
+                </button>
+              </div>
+            ) : (
+              <div className="rounded-xl bg-gray-50 border border-gray-200 p-4 space-y-3">
+                <p className="text-sm font-semibold text-gray-700">Decline challenge</p>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    Reason{" "}
+                    <span className="font-normal text-gray-400">(optional)</span>
+                  </label>
+                  <textarea
+                    value={declineReason}
+                    onChange={(e) => setDeclineReason(e.target.value)}
+                    placeholder="Let them know why, or leave blank"
+                    rows={2}
+                    maxLength={200}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm resize-none focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleRespond("DECLINE", declineReason)}
+                    disabled={loading}
+                    className="rounded-xl bg-gray-700 px-5 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                  >
+                    {loading ? "…" : "Confirm decline"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowDeclineForm(false); setDeclineReason(""); }}
+                    disabled={loading}
+                    className="rounded-xl border border-gray-200 px-5 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

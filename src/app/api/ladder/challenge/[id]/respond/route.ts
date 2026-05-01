@@ -20,7 +20,7 @@ export async function POST(
 
   const { id } = await params;
   const body = await req.json();
-  const { action } = body as { action: "ACCEPT" | "DECLINE" };
+  const { action, reason } = body as { action: "ACCEPT" | "DECLINE"; reason?: string };
 
   if (action !== "ACCEPT" && action !== "DECLINE") {
     return NextResponse.json({ error: "action must be ACCEPT or DECLINE." }, { status: 400 });
@@ -52,6 +52,7 @@ export async function POST(
     data: {
       status: action === "ACCEPT" ? "ACCEPTED" : "DECLINED",
       respondedAt: new Date(),
+      ...(action === "DECLINE" && { declineReason: reason?.trim() || null }),
     },
   });
 

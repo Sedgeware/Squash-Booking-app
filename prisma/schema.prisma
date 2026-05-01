@@ -93,6 +93,7 @@ model LadderChallenge {
   notes               String?
   hiddenByChallenger  Boolean   @default(false)
   hiddenByChallenged  Boolean   @default(false)
+  declineReason       String?
   updatedAt           DateTime  @updatedAt
 
   challenger LadderPlayer  @relation("LadderChallenger", fields: [challengerId], references: [id])
