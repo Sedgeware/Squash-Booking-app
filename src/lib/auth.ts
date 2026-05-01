@@ -39,6 +39,11 @@ export const authOptions: NextAuthOptions = {
             role: user.role,
           };
         } catch (err) {
+          // Re-throw known auth errors so NextAuth exposes them to the client.
+          // All other errors (e.g. DB failures) are swallowed and logged.
+          if (err instanceof Error && err.message === "EmailNotVerified") {
+            throw err;
+          }
           console.error("authorize error:", err);
           return null;
         }
