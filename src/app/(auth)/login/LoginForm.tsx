@@ -17,10 +17,14 @@ export function LoginForm({ registered, verified, invalidToken }: Props) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setShowResend(false);
+    setResendStatus("idle");
     setLoading(true);
 
     const result = await signIn("credentials", {
@@ -33,10 +37,25 @@ export function LoginForm({ registered, verified, invalidToken }: Props) {
 
     if (result?.error === "EmailNotVerified") {
       setError("Please verify your email address before signing in. Check your inbox for the verification link.");
+      setShowResend(true);
     } else if (result?.error || !result?.ok) {
       setError("Invalid email or password.");
     } else {
       router.push("/dashboard");
+    }
+  }
+
+  async function handleResend() {
+    setResendStatus("sending");
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      setResendStatus(res.ok ? "sent" : "error");
+    } catch {
+      setResendStatus("error");
     }
   }
 
@@ -87,9 +106,25 @@ export function LoginForm({ registered, verified, invalidToken }: Props) {
         </div>
 
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-            {error}
-          </p>
+          <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 space-y-2">
+            <p className="text-sm text-red-600">{error}</p>
+            {showResend && (
+              resendStatus === "sent" ? (
+                <p className="text-sm text-brand-700 font-medium">Verification email sent — check your inbox.</p>
+              ) : resendStatus === "error" ? (
+                <p className="text-sm text-red-600">Failed to resend. Please try again.</p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  disabled={resendStatus === "sending"}
+                  className="text-sm font-semibold text-red-700 underline underline-offset-2 hover:text-red-800 disabled:opacity-50"
+                >
+                  {resendStatus === "sending" ? "Sending…" : "Resend verification email"}
+                </button>
+              )
+            )}
+          </div>
         )}
 
         <button
