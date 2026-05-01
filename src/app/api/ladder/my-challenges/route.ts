@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 /**
  * GET /api/ladder/my-challenges
@@ -29,16 +30,14 @@ export async function GET() {
     },
   } as const;
 
-  const ACTIVE_STATUSES = ["PENDING", "ACCEPTED"];
-  const HISTORICAL_STATUSES = ["DECLINED", "COMPLETED", "CANCELLED"];
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-  const historicalFilter = {
+  const historicalFilter: Prisma.LadderChallengeWhereInput = {
     OR: [
-      { status: { in: ACTIVE_STATUSES } },
-      { status: { in: HISTORICAL_STATUSES }, updatedAt: { gte: thirtyDaysAgo } },
+      { status: { in: ["PENDING", "ACCEPTED"] } },
+      { status: { in: ["DECLINED", "COMPLETED", "CANCELLED"] }, updatedAt: { gte: thirtyDaysAgo } },
     ],
-  } as const;
+  };
 
   const [outgoing, incoming] = await Promise.all([
     prisma.ladderChallenge.findMany({
