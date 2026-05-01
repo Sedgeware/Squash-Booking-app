@@ -10,7 +10,6 @@ import { Avatar } from "@/components/Avatar";
 const mainLinks = [
   { href: "/dashboard",   label: "Dashboard",    icon: HomeIcon },
   { href: "/booking",     label: "Book a Court", icon: CalendarIcon },
-  { href: "/membership",  label: "Membership",   icon: CreditCardIcon },
 ];
 
 const adminLinks = [
