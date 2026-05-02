@@ -64,8 +64,12 @@ export default async function DashboardPage() {
     state: ReturnType<typeof getChallengeState>;
   }[] = [];
 
+  // ── Immediate neighbours on the ladder ───────────────────────────────────
+  let playerAbove: { id: string; rank: number; user: { name: string; avatarUrl: string | null } } | null = null;
+  let playerBelow: { id: string; rank: number; user: { name: string; avatarUrl: string | null } } | null = null;
+
   if (isActiveLadder && ladderPlayer) {
-    const [activeChallengeRaw, openChallenges, abovePlayers] =
+    const [activeChallengeRaw, openChallenges, abovePlayers, neighbours] =
       await Promise.all([
         prisma.ladderChallenge.findFirst({
           where: {
@@ -96,6 +100,13 @@ export default async function DashboardPage() {
           include: { user: { select: { name: true, avatarUrl: true } } },
           orderBy: { rank: "asc" },
         }),
+        prisma.ladderPlayer.findMany({
+          where: {
+            status: "ACTIVE",
+            rank: { in: [ladderPlayer.rank! - 1, ladderPlayer.rank! + 1] },
+          },
+          select: { id: true, rank: true, user: { select: { name: true, avatarUrl: true } } },
+        }),
       ]);
 
     activeChallenge = activeChallengeRaw as ActiveChallenge | null;
@@ -111,6 +122,9 @@ export default async function DashboardPage() {
         openChallenges
       ),
     }));
+
+    playerAbove = neighbours.find((p) => p.rank === ladderPlayer.rank! - 1) ?? null;
+    playerBelow = neighbours.find((p) => p.rank === ladderPlayer.rank! + 1) ?? null;
   }
 
   // ── Admin summary ─────────────────────────────────────────────────────────
@@ -320,6 +334,81 @@ export default async function DashboardPage() {
               </div>
             )}
           </div>
+
+          {/* Around you */}
+          {(playerAbove || playerBelow) && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <div className="px-6 py-4 border-b border-gray-100">
+                <h2 className="font-semibold text-gray-800">Around you</h2>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Your immediate neighbours on the ladder
+                </p>
+              </div>
+              <ul className="divide-y divide-gray-50">
+                {playerAbove && (
+                  <li className="px-6 py-3.5 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar
+                        name={playerAbove.user.name}
+                        avatarUrl={playerAbove.user.avatarUrl}
+                        size="sm"
+                      />
+                      <div>
+                        <Link
+                          href={`/ladder/player/${playerAbove.id}`}
+                          className="text-sm font-medium text-gray-800 hover:text-brand-600 hover:underline underline-offset-2 transition-colors"
+                        >
+                          {playerAbove.user.name}
+                        </Link>
+                        <p className="text-xs text-gray-400">Rank #{playerAbove.rank}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-gray-400 italic">above you</span>
+                  </li>
+                )}
+
+                {/* Current user row */}
+                <li className="px-6 py-3.5 flex items-center justify-between bg-brand-50/60">
+                  <div className="flex items-center gap-3">
+                    <Avatar name={session.user.name ?? ""} avatarUrl={null} size="sm" />
+                    <div>
+                      <p className="text-sm font-semibold text-brand-700">
+                        {session.user.name}
+                      </p>
+                      <p className="text-xs text-brand-500">
+                        Rank #{ladderPlayer!.rank} · You
+                      </p>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-semibold text-brand-700 border border-brand-200">
+                    You
+                  </span>
+                </li>
+
+                {playerBelow && (
+                  <li className="px-6 py-3.5 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar
+                        name={playerBelow.user.name}
+                        avatarUrl={playerBelow.user.avatarUrl}
+                        size="sm"
+                      />
+                      <div>
+                        <Link
+                          href={`/ladder/player/${playerBelow.id}`}
+                          className="text-sm font-medium text-gray-800 hover:text-brand-600 hover:underline underline-offset-2 transition-colors"
+                        >
+                          {playerBelow.user.name}
+                        </Link>
+                        <p className="text-xs text-gray-400">Rank #{playerBelow.rank}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-gray-400 italic">below you</span>
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
 
           {/* Challengeable players */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
