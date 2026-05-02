@@ -4,7 +4,14 @@ import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 
 export const authOptions: NextAuthOptions = {
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+    maxAge: 60 * 60 * 12,  // 12 hours — session expires if inactive for this long
+    updateAge: 60 * 60,    // reissue the JWT at most once per hour when the user is active
+  },
+  jwt: {
+    maxAge: 60 * 60 * 12,  // JWT lifetime must match session maxAge
+  },
   pages: {
     signIn: "/login",
   },
