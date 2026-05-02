@@ -187,7 +187,10 @@ function ChallengeCard({
   myLadderPlayerId: string;
 }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  // Holds the in-progress action label (e.g. "Accepting...") or null when idle.
+  // Using a string rather than a boolean lets each button show its own label.
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const loading = loadingAction !== null; // convenience alias for disabled props
   const [error, setError] = useState<string | null>(null);
   const [showResultForm, setShowResultForm] = useState(false);
   const [showDeclineForm, setShowDeclineForm] = useState(false);
@@ -203,7 +206,7 @@ function ChallengeCard({
   const inProgress = c.status === "ACCEPTED";
 
   async function handleRespond(action: "ACCEPT" | "DECLINE", reason?: string) {
-    setLoading(true);
+    setLoadingAction(action === "ACCEPT" ? "Accepting..." : "Declining...");
     setError(null);
     try {
       const res = await fetch(`/api/ladder/challenge/${c.id}/respond`, {
@@ -215,12 +218,12 @@ function ChallengeCard({
       if (!res.ok) setError(data.error ?? "Action failed.");
       else router.refresh();
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
     }
   }
 
   async function handleWithdraw() {
-    setLoading(true);
+    setLoadingAction("Withdrawing...");
     setError(null);
     try {
       const res = await fetch(`/api/ladder/challenge/${c.id}/withdraw`, { method: "POST" });
@@ -231,12 +234,12 @@ function ChallengeCard({
     } catch {
       setError("Network error. Please try again.");
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
     }
   }
 
   async function handleCancel() {
-    setLoading(true);
+    setLoadingAction("Cancelling...");
     setError(null);
     try {
       const res = await fetch(`/api/ladder/challenge/${c.id}/cancel`, { method: "POST" });
@@ -247,12 +250,12 @@ function ChallengeCard({
     } catch {
       setError("Network error. Please try again.");
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
     }
   }
 
   async function handleClear() {
-    setLoading(true);
+    setLoadingAction("Clearing...");
     setError(null);
     try {
       const res = await fetch(`/api/ladder/challenge/${c.id}/clear`, { method: "POST" });
@@ -263,7 +266,7 @@ function ChallengeCard({
     } catch {
       setError("Network error. Please try again.");
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
     }
   }
 
@@ -378,7 +381,7 @@ function ChallengeCard({
                   disabled={loading}
                   className="rounded-xl bg-brand-600 px-5 py-2 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
                 >
-                  {loading ? "…" : "Accept"}
+                  {loadingAction ?? "Accept"}
                 </button>
                 <button
                   onClick={() => setShowDeclineForm(true)}
@@ -412,7 +415,7 @@ function ChallengeCard({
                     disabled={loading}
                     className="rounded-xl bg-gray-700 px-5 py-2 text-xs font-semibold text-white hover:bg-gray-800 disabled:opacity-50 transition-colors"
                   >
-                    {loading ? "…" : "Confirm decline"}
+                    {loadingAction ?? "Confirm decline"}
                   </button>
                   <button
                     type="button"
@@ -436,7 +439,7 @@ function ChallengeCard({
               disabled={loading}
               className="rounded-xl border border-red-200 px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
             >
-              {loading ? "…" : "Withdraw challenge"}
+              {loadingAction ?? "Withdraw challenge"}
             </button>
           </div>
         )}
@@ -466,7 +469,7 @@ function ChallengeCard({
                     disabled={loading}
                     className="rounded-xl bg-amber-700 px-5 py-2 text-xs font-semibold text-white hover:bg-amber-800 disabled:opacity-50 transition-colors"
                   >
-                    {loading ? "…" : "Yes, cancel challenge"}
+                    {loadingAction ?? "Yes, cancel challenge"}
                   </button>
                   <button
                     type="button"
@@ -506,7 +509,7 @@ function ChallengeCard({
               disabled={loading}
               className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-medium text-gray-400 hover:bg-gray-50 disabled:opacity-50 transition-colors"
             >
-              {loading ? "…" : "Clear from list"}
+              {loadingAction ?? "Clear from list"}
             </button>
           </div>
         )}

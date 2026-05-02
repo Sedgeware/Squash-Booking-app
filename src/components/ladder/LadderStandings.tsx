@@ -209,7 +209,7 @@ export function LadderStandings({
                           disabled={actionLoading === player.id}
                           className="rounded-full bg-brand-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50 transition-colors shadow-sm"
                         >
-                          {actionLoading === player.id ? "…" : "Challenge"}
+                          {actionLoading === player.id ? "Challenging..." : "Challenge"}
                         </button>
                       ) : (
                         <ChallengeStatePill state={challengeState!} />
