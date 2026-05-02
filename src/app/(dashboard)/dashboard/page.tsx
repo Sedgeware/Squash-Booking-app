@@ -53,8 +53,18 @@ export default async function DashboardPage() {
   let playerAbove: { id: string; rank: number; user: { name: string; avatarUrl: string | null } } | null = null;
   let playerBelow: { id: string; rank: number; user: { name: string; avatarUrl: string | null } } | null = null;
 
+  // ── 30-day rank movement ──────────────────────────────────────────────────
+  // null  = no qualifying history found (new player / no activity) → render nothing
+  // 0     = rank unchanged over the period
+  // +N    = moved up N places
+  // -N    = moved down N places
+  let rankMovement: number | null = null;
+
   if (isActiveLadder && ladderPlayer) {
-    const [activeChallengeRaw, openChallenges, abovePlayers, neighbours] =
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const [activeChallengeRaw, openChallenges, abovePlayers, neighbours, earliestHistory] =
       await Promise.all([
         prisma.ladderChallenge.findFirst({
           where: {
@@ -92,6 +102,17 @@ export default async function DashboardPage() {
           },
           select: { id: true, rank: true, user: { select: { name: true, avatarUrl: true } } },
         }),
+
+        // Earliest rank-change entry in the last 30 days (oldRank = where they started)
+        prisma.ladderHistory.findFirst({
+          where: {
+            ladderPlayerId: ladderPlayer.id,
+            createdAt: { gte: thirtyDaysAgo },
+            oldRank: { not: null },
+          },
+          orderBy: { createdAt: "asc" },
+          select: { oldRank: true },
+        }),
       ]);
 
     activeChallenge = activeChallengeRaw as ActiveChallenge | null;
@@ -113,6 +134,11 @@ export default async function DashboardPage() {
     );
     playerAbove = rankedNeighbours.find((p) => p.rank === ladderPlayer.rank! - 1) ?? null;
     playerBelow = rankedNeighbours.find((p) => p.rank === ladderPlayer.rank! + 1) ?? null;
+
+    if (earliestHistory?.oldRank != null) {
+      // positive = moved up (rank number went down), negative = moved down
+      rankMovement = earliestHistory.oldRank - ladderPlayer.rank!;
+    }
   }
 
   // ── Admin summary ─────────────────────────────────────────────────────────
@@ -190,6 +216,7 @@ export default async function DashboardPage() {
                 <p className="text-5xl font-black text-brand-700">
                   #{ladderPlayer.rank}
                 </p>
+                <RankMovementBadge movement={rankMovement} />
               </div>
               <div className="flex gap-3">
                 <Link
@@ -578,6 +605,32 @@ function AdminStatCard({
         {value}
       </p>
     </Link>
+  );
+}
+
+function RankMovementBadge({ movement }: { movement: number | null }) {
+  if (movement === null) return null;
+
+  if (movement === 0) {
+    return (
+      <p className="mt-1.5 text-xs font-medium text-gray-400">
+        = No change in the last 30 days
+      </p>
+    );
+  }
+
+  if (movement > 0) {
+    return (
+      <p className="mt-1.5 text-xs font-semibold text-green-600">
+        ↑ {movement} place{movement !== 1 ? "s" : ""} in the last 30 days
+      </p>
+    );
+  }
+
+  return (
+    <p className="mt-1.5 text-xs font-semibold text-red-500">
+      ↓ {Math.abs(movement)} place{Math.abs(movement) !== 1 ? "s" : ""} in the last 30 days
+    </p>
   );
 }
 
