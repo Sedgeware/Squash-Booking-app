@@ -2,31 +2,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { OPEN_STATUSES } from "@/lib/ladder";
+import { fetchRecentActivity, timeAgo } from "@/lib/activityFeed";
 import { LadderStandings } from "@/components/ladder/LadderStandings";
 import { JoinLadderCard } from "@/components/ladder/JoinLadderCard";
 import { cn } from "@/lib/utils";
-
-// ─── Feed helpers ─────────────────────────────────────────────────────────────
-
-interface FeedItem {
-  id: string;
-  icon: string;
-  iconCls: string;
-  text: string;
-  timestamp: Date;
-}
-
-function timeAgo(date: Date): string {
-  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -59,8 +38,7 @@ export default async function LadderPage() {
     openChallenges,
     rankHistory,
     formChallenges,
-    recentChallenges,
-    recentJoins,
+    feed,
   ] = await Promise.all([
     // Open challenges for eligibility
     isActiveLadderPlayer
@@ -95,37 +73,8 @@ export default async function LadderPage() {
         })
       : ([] as { challengerId: string; challengedId: string; winnerId: string | null }[]),
 
-    // Activity feed: completed + accepted
-    prisma.ladderChallenge.findMany({
-      where: { status: { in: ["ACCEPTED", "COMPLETED"] } },
-      orderBy: { updatedAt: "desc" },
-      take: 12,
-      select: {
-        id: true,
-        status: true,
-        respondedAt: true,
-        completedAt: true,
-        challengerId: true,
-        challengedId: true,
-        winnerId: true,
-        score: true,
-        challenger: { select: { user: { select: { name: true } } } },
-        challenged: { select: { user: { select: { name: true } } } },
-      },
-    }),
-
-    // Activity feed: recent joins only
-    prisma.ladderHistory.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 8,
-      select: {
-        id: true,
-        reason: true,
-        newRank: true,
-        createdAt: true,
-        ladderPlayer: { select: { user: { select: { name: true } } } },
-      },
-    }),
+    // Activity feed (shared helper — same source as Dashboard)
+    fetchRecentActivity(6),
   ]);
 
   // ── Movement map ─────────────────────────────────────────────────────────
@@ -163,62 +112,6 @@ export default async function LadderPage() {
     form: formByPlayer[p.id] ?? ([] as ("W" | "L")[]),
   }));
 
-  const feedItems: FeedItem[] = [];
-
-  for (const ch of recentChallenges) {
-    const challengerName = ch.challenger.user.name;
-    const challengedName = ch.challenged.user.name;
-
-    if (ch.status === "COMPLETED" && ch.completedAt) {
-      const winnerName =
-        ch.winnerId === ch.challengerId
-          ? challengerName
-          : ch.winnerId === ch.challengedId
-            ? challengedName
-            : null;
-      const loserName =
-        winnerName === challengerName ? challengedName : challengerName;
-      const scoreStr = ch.score ? ` (${ch.score})` : "";
-
-      feedItems.push({
-        id: `c-${ch.id}`,
-        icon: "★",
-        iconCls: "bg-brand-100 text-brand-700",
-        text: winnerName
-          ? `${winnerName} beat ${loserName}${scoreStr}`
-          : `Match: ${challengerName} vs ${challengedName}${scoreStr}`,
-        timestamp: ch.completedAt,
-      });
-    } else if (ch.status === "ACCEPTED" && ch.respondedAt) {
-      feedItems.push({
-        id: `a-${ch.id}`,
-        icon: "✓",
-        iconCls: "bg-blue-100 text-blue-600",
-        text: `${challengedName} accepted ${challengerName}'s challenge`,
-        timestamp: ch.respondedAt,
-      });
-    }
-  }
-
-  // Only join events from history (rank-change events are redundant with completed feed)
-  for (const h of recentJoins) {
-    const name = h.ladderPlayer.user.name;
-    if (
-      h.reason.toLowerCase().includes("joined") ||
-      h.reason.toLowerCase().includes("approved")
-    ) {
-      feedItems.push({
-        id: `j-${h.id}`,
-        icon: "+",
-        iconCls: "bg-green-100 text-green-700",
-        text: `${name} joined the ladder at rank #${h.newRank}`,
-        timestamp: h.createdAt,
-      });
-    }
-  }
-
-  feedItems.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  const feed = feedItems.slice(0, 6);
 
   // ─────────────────────────────────────────────────────────────────────────
   return (

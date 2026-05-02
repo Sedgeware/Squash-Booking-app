@@ -4,6 +4,7 @@ import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getChallengeState, OPEN_STATUSES } from "@/lib/ladder";
+import { fetchRecentActivity, timeAgo, type ActivityFeedItem } from "@/lib/activityFeed";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/Avatar";
 
@@ -16,22 +17,6 @@ interface ActiveChallenge {
   challengedId: string;
   challenger: { user: { name: string }; rank: number | null };
   challenged: { user: { name: string }; rank: number | null };
-}
-
-interface FeedEvent {
-  id: string;
-  type:
-    | "challenge_issued"
-    | "challenge_accepted"
-    | "challenge_declined"
-    | "challenge_completed"
-    | "challenge_cancelled"
-    | "rank_change"
-    | "player_joined";
-  timestamp: Date;
-  actorName: string;
-  targetName?: string;
-  detail?: string;
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -153,94 +138,7 @@ export default async function DashboardPage() {
   }
 
   // ── Activity feed ─────────────────────────────────────────────────────────
-  const [recentChallenges, recentHistory] = await Promise.all([
-    prisma.ladderChallenge.findMany({
-      where: { status: { not: "PENDING" } },
-      orderBy: { updatedAt: "desc" },
-      take: 12,
-      include: {
-        challenger: { select: { user: { select: { name: true } } } },
-        challenged: { select: { user: { select: { name: true } } } },
-      },
-    }),
-    prisma.ladderHistory.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 10,
-      include: { ladderPlayer: { select: { user: { select: { name: true } } } } },
-    }),
-  ]);
-
-  // Build unified feed
-  const feedEvents: FeedEvent[] = [];
-
-  for (const ch of recentChallenges) {
-    const actorName = ch.challenger.user.name;
-    const targetName = ch.challenged.user.name;
-
-    if (ch.status === "ACCEPTED" && ch.respondedAt) {
-      feedEvents.push({
-        id: `ch-acc-${ch.id}`,
-        type: "challenge_accepted",
-        timestamp: ch.respondedAt,
-        actorName: targetName,
-        targetName: actorName,
-      });
-    }
-    if (ch.status === "DECLINED" && ch.respondedAt) {
-      feedEvents.push({
-        id: `ch-dec-${ch.id}`,
-        type: "challenge_declined",
-        timestamp: ch.respondedAt,
-        actorName: targetName,
-        targetName: actorName,
-      });
-    }
-    if (ch.status === "COMPLETED" && ch.completedAt) {
-      feedEvents.push({
-        id: `ch-cmp-${ch.id}`,
-        type: "challenge_completed",
-        timestamp: ch.completedAt,
-        actorName,
-        targetName,
-      });
-    }
-    if (ch.status === "CANCELLED") {
-      feedEvents.push({
-        id: `ch-can-${ch.id}`,
-        type: "challenge_cancelled",
-        timestamp: ch.updatedAt,
-        actorName,
-        targetName,
-      });
-    }
-  }
-
-  for (const h of recentHistory) {
-    const name = h.ladderPlayer.user.name;
-    if (h.reason.toLowerCase().includes("joined") || h.reason.toLowerCase().includes("approved")) {
-      feedEvents.push({
-        id: `h-join-${h.id}`,
-        type: "player_joined",
-        timestamp: h.createdAt,
-        actorName: name,
-        detail: `Joined at rank #${h.newRank}`,
-      });
-    } else if (h.oldRank !== h.newRank && h.oldRank !== null && h.newRank !== null) {
-      feedEvents.push({
-        id: `h-rank-${h.id}`,
-        type: "rank_change",
-        timestamp: h.createdAt,
-        actorName: name,
-        detail:
-          h.newRank < h.oldRank
-            ? `Moved up from #${h.oldRank} to #${h.newRank}`
-            : `Moved down from #${h.oldRank} to #${h.newRank}`,
-      });
-    }
-  }
-
-  feedEvents.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  const feed = feedEvents.slice(0, 8);
+  const feed = await fetchRecentActivity(8);
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
@@ -555,19 +453,21 @@ export default async function DashboardPage() {
             <h2 className="font-semibold text-gray-800">Recent ladder activity</h2>
           </div>
           <ul className="divide-y divide-gray-50">
-            {feed.map((event) => (
-              <li key={event.id} className="px-6 py-3.5 flex items-start gap-3">
-                <FeedIcon type={event.type} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-700">
-                    <FeedEventText event={event} />
-                  </p>
-                  {event.detail && (
-                    <p className="text-xs text-gray-400 mt-0.5">{event.detail}</p>
+            {feed.map((item: ActivityFeedItem) => (
+              <li key={item.id} className="px-6 py-3.5 flex items-start gap-3">
+                <span
+                  className={cn(
+                    "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                    item.iconCls
                   )}
+                >
+                  {item.icon}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-700">{item.text}</p>
                 </div>
                 <span className="text-xs text-gray-400 whitespace-nowrap flex-shrink-0">
-                  {timeAgo(event.timestamp)}
+                  {timeAgo(item.timestamp)}
                 </span>
               </li>
             ))}
@@ -679,88 +579,6 @@ function AdminStatCard({
       </p>
     </Link>
   );
-}
-
-function FeedIcon({ type }: { type: FeedEvent["type"] }) {
-  const base = "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold";
-  switch (type) {
-    case "challenge_issued":
-      return <span className={cn(base, "bg-amber-100 text-amber-700")}>⚔</span>;
-    case "challenge_accepted":
-      return <span className={cn(base, "bg-blue-100 text-blue-700")}>✓</span>;
-    case "challenge_declined":
-      return <span className={cn(base, "bg-gray-100 text-gray-500")}>✗</span>;
-    case "challenge_completed":
-      return <span className={cn(base, "bg-brand-100 text-brand-700")}>★</span>;
-    case "challenge_cancelled":
-      return <span className={cn(base, "bg-red-50 text-red-400")}>○</span>;
-    case "rank_change":
-      return <span className={cn(base, "bg-purple-100 text-purple-700")}>↕</span>;
-    case "player_joined":
-      return <span className={cn(base, "bg-green-100 text-green-700")}>+</span>;
-  }
-}
-
-function FeedEventText({ event }: { event: FeedEvent }) {
-  switch (event.type) {
-    case "challenge_issued":
-      return (
-        <>
-          <span className="font-semibold">{event.actorName}</span> challenged{" "}
-          <span className="font-semibold">{event.targetName}</span>
-        </>
-      );
-    case "challenge_accepted":
-      return (
-        <>
-          <span className="font-semibold">{event.actorName}</span> accepted a challenge from{" "}
-          <span className="font-semibold">{event.targetName}</span>
-        </>
-      );
-    case "challenge_declined":
-      return (
-        <>
-          <span className="font-semibold">{event.actorName}</span> declined a challenge from{" "}
-          <span className="font-semibold">{event.targetName}</span>
-        </>
-      );
-    case "challenge_completed":
-      return (
-        <>
-          Match completed:{" "}
-          <span className="font-semibold">{event.actorName}</span> vs{" "}
-          <span className="font-semibold">{event.targetName}</span>
-        </>
-      );
-    case "challenge_cancelled":
-      return (
-        <>
-          Challenge cancelled between{" "}
-          <span className="font-semibold">{event.actorName}</span> and{" "}
-          <span className="font-semibold">{event.targetName}</span>
-        </>
-      );
-    case "rank_change":
-      return <span className="font-semibold">{event.actorName}</span>;
-    case "player_joined":
-      return (
-        <>
-          <span className="font-semibold">{event.actorName}</span> joined the ladder
-        </>
-      );
-  }
-}
-
-function timeAgo(date: Date): string {
-  const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (seconds < 60) return "just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
 function TrophyIcon({ className }: { className?: string }) {
