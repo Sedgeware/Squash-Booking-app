@@ -192,7 +192,10 @@ export default async function LadderPage() {
       )}
 
       {/* Main content — standings + feed side by side on wide screens */}
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
+      {/* lg:items-start keeps the feed from stretching to standings height on desktop.   */}
+      {/* On mobile (flex-col) we omit items-start so the standings column stretches to  */}
+      {/* full width (align-items: stretch is the default), matching other page cards.    */}
+      <div className="flex flex-col lg:flex-row gap-6 lg:items-start">
         {/* Standings table */}
         <div className="flex-1 min-w-0">
           <LadderStandings
