@@ -192,6 +192,7 @@ function ChallengeCard({
   const [showResultForm, setShowResultForm] = useState(false);
   const [showDeclineForm, setShowDeclineForm] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const opponent = direction === "outgoing" ? c.challenged : c.challenger;
   const badge = statusBadges[c.status] ?? statusBadges.PENDING;
@@ -226,6 +227,22 @@ function ChallengeCard({
       let data: { error?: string } = {};
       try { data = await res.json(); } catch { /* ok */ }
       if (!res.ok) setError(data.error ?? "Failed to withdraw.");
+      else router.refresh();
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCancel() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/ladder/challenge/${c.id}/cancel`, { method: "POST" });
+      let data: { error?: string } = {};
+      try { data = await res.json(); } catch { /* ok */ }
+      if (!res.ok) setError(data.error ?? "Failed to cancel challenge.");
       else router.refresh();
     } catch {
       setError("Network error. Please try again.");
@@ -424,17 +441,10 @@ function ChallengeCard({
           </div>
         )}
 
-        {/* ACCEPTED → Submit result */}
+        {/* ACCEPTED → Submit result / Cancel challenge */}
         {c.status === "ACCEPTED" && !c.winnerId && (
-          <div className="pt-1">
-            {!showResultForm ? (
-              <button
-                onClick={() => setShowResultForm(true)}
-                className="rounded-xl bg-blue-600 px-5 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition-colors"
-              >
-                Submit result
-              </button>
-            ) : (
+          <div className="pt-1 space-y-3">
+            {showResultForm ? (
               <ResultForm
                 challengeId={c.id}
                 challengerId={c.challengerId}
@@ -443,6 +453,47 @@ function ChallengeCard({
                 challengedName={c.challenged.user.name}
                 onCancel={() => setShowResultForm(false)}
               />
+            ) : showCancelConfirm ? (
+              <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 space-y-3">
+                <p className="text-sm font-semibold text-amber-800">Cancel this accepted challenge?</p>
+                <p className="text-xs text-amber-700">
+                  This will not affect rankings. Both players will be free to issue new challenges.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    disabled={loading}
+                    className="rounded-xl bg-amber-700 px-5 py-2 text-xs font-semibold text-white hover:bg-amber-800 disabled:opacity-50 transition-colors"
+                  >
+                    {loading ? "…" : "Yes, cancel challenge"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCancelConfirm(false)}
+                    disabled={loading}
+                    className="rounded-xl border border-amber-300 px-5 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50 transition-colors"
+                  >
+                    Keep challenge
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowResultForm(true)}
+                  className="rounded-xl bg-blue-600 px-5 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition-colors"
+                >
+                  Submit result
+                </button>
+                <button
+                  onClick={() => setShowCancelConfirm(true)}
+                  disabled={loading}
+                  className="rounded-xl border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-500 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                >
+                  Cancel challenge
+                </button>
+              </div>
             )}
           </div>
         )}
