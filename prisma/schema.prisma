@@ -71,6 +71,7 @@ model LadderPlayer {
   notes        String?
   showPhone    Boolean   @default(true)
   showEmail    Boolean   @default(true)
+  availability String    @default("AVAILABLE") // "AVAILABLE" | "AWAY"
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 

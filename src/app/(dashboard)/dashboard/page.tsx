@@ -92,7 +92,12 @@ export default async function DashboardPage() {
             status: "ACTIVE",
             rank: { gte: ladderPlayer.rank! - 3, lt: ladderPlayer.rank! },
           },
-          include: { user: { select: { name: true, avatarUrl: true } } },
+          select: {
+            id: true,
+            rank: true,
+            availability: true,
+            user: { select: { name: true, avatarUrl: true } },
+          },
           orderBy: { rank: "asc" },
         }),
         prisma.ladderPlayer.findMany({
@@ -124,7 +129,7 @@ export default async function DashboardPage() {
       avatarUrl: p.user.avatarUrl,
       state: getChallengeState(
         { id: ladderPlayer.id, rank: ladderPlayer.rank!, status: "ACTIVE" },
-        { id: p.id, rank: p.rank! },
+        { id: p.id, rank: p.rank!, availability: p.availability },
         openChallenges
       ),
     }));
@@ -549,6 +554,13 @@ function ChallengeabilityPill({
     return (
       <span className="inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 border border-brand-200">
         Challenge available
+      </span>
+    );
+  }
+  if (state === "away") {
+    return (
+      <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 border border-amber-200">
+        Away
       </span>
     );
   }

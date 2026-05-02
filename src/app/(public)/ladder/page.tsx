@@ -110,6 +110,7 @@ export default async function LadderPage() {
     email: isActiveLadderPlayer && p.showEmail ? p.user.email : null,
     movement: movementByPlayer[p.id] ?? 0,
     form: formByPlayer[p.id] ?? ([] as ("W" | "L")[]),
+    availability: p.availability,
   }));
 
 

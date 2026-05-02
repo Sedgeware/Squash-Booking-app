@@ -38,7 +38,7 @@ export async function POST(req: Request) {
   // Load challenged player
   const challenged = await prisma.ladderPlayer.findUnique({
     where: { id: challengedLadderPlayerId },
-    select: { id: true, rank: true, status: true, user: { select: { name: true, email: true } } },
+    select: { id: true, rank: true, status: true, availability: true, user: { select: { name: true, email: true } } },
   });
 
   if (!challenged || challenged.status !== "ACTIVE") {
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
 
   const state = getChallengeState(
     { id: challenger.id, rank: challenger.rank!, status: challenger.status },
-    { id: challenged.id, rank: challenged.rank! },
+    { id: challenged.id, rank: challenged.rank!, availability: challenged.availability },
     openChallenges
   );
 
@@ -64,6 +64,7 @@ export async function POST(req: Request) {
     "has-open-outgoing": "You already have an open outgoing challenge. Wait for it to conclude before issuing another.",
     "target-has-incoming": "This player already has an open incoming challenge.",
     "already-challenged": "There is already an open challenge between you and this player.",
+    away: "This player is currently marked as away and cannot receive new challenges.",
   };
 
   if (state !== "challengeable") {

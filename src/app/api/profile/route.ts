@@ -20,7 +20,7 @@ export async function GET() {
 
   const ladderPlayer = await prisma.ladderPlayer.findUnique({
     where: { userId: session.user.id },
-    select: { showPhone: true, showEmail: true },
+    select: { showPhone: true, showEmail: true, availability: true, status: true },
   });
 
   return NextResponse.json({ ...user, ladderPrefs: ladderPlayer ?? null });
@@ -40,6 +40,7 @@ export async function PATCH(request: Request) {
     phone?: string;
     showPhone?: boolean;
     showEmail?: boolean;
+    availability?: string;
   };
 
   // ── Validate ──────────────────────────────────────────────────────────────
@@ -71,17 +72,27 @@ export async function PATCH(request: Request) {
     });
   }
 
-  // ── Update ladder visibility prefs (only if player exists) ───────────────
-  if (body.showPhone !== undefined || body.showEmail !== undefined) {
+  // ── Validate availability value if provided ───────────────────────────────
+  if (body.availability !== undefined && !["AVAILABLE", "AWAY"].includes(body.availability)) {
+    return NextResponse.json({ error: "Invalid availability value." }, { status: 400 });
+  }
+
+  // ── Update ladder prefs (visibility + availability, only if player exists) ─
+  if (
+    body.showPhone !== undefined ||
+    body.showEmail !== undefined ||
+    body.availability !== undefined
+  ) {
     const ladderPlayer = await prisma.ladderPlayer.findUnique({
       where: { userId: session.user.id },
       select: { id: true },
     });
 
     if (ladderPlayer) {
-      const lpUpdate: { showPhone?: boolean; showEmail?: boolean } = {};
+      const lpUpdate: { showPhone?: boolean; showEmail?: boolean; availability?: string } = {};
       if (body.showPhone !== undefined) lpUpdate.showPhone = body.showPhone;
       if (body.showEmail !== undefined) lpUpdate.showEmail = body.showEmail;
+      if (body.availability !== undefined) lpUpdate.availability = body.availability;
       await prisma.ladderPlayer.update({
         where: { id: ladderPlayer.id },
         data: lpUpdate,

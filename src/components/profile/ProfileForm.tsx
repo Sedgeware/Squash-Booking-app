@@ -15,6 +15,8 @@ interface Props {
   ladderPrefs: {
     showPhone: boolean;
     showEmail: boolean;
+    availability: string;
+    isActive: boolean;
   } | null;
 }
 
@@ -145,6 +147,11 @@ export function ProfileForm({ user, ladderPrefs }: Props) {
   const [prefsSaving, setPrefsSaving] = useState(false);
   const [prefsToast, setPrefsToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
+  // ── Availability state ────────────────────────────────────────────────────
+  const [availability, setAvailability] = useState(ladderPrefs?.availability ?? "AVAILABLE");
+  const [availSaving, setAvailSaving] = useState(false);
+  const [availToast, setAvailToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
   // ─────────────────────────────────────────────────────────────────────────
   // Handlers
   // ─────────────────────────────────────────────────────────────────────────
@@ -255,6 +262,36 @@ export function ProfileForm({ user, ladderPrefs }: Props) {
       setPrefsToast({ type: "error", message: "Network error. Please try again." });
     } finally {
       setPrefsSaving(false);
+    }
+  }
+
+  async function saveAvailability(next: "AVAILABLE" | "AWAY") {
+    setAvailSaving(true);
+    setAvailToast(null);
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ availability: next }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setAvailToast({ type: "error", message: data.error ?? "Failed to save." });
+      } else {
+        setAvailability(next);
+        setAvailToast({
+          type: "success",
+          message:
+            next === "AWAY"
+              ? "You are now marked as away. Other players cannot challenge you."
+              : "You are now marked as available. Other players can challenge you again.",
+        });
+        router.refresh();
+      }
+    } catch {
+      setAvailToast({ type: "error", message: "Network error. Please try again." });
+    } finally {
+      setAvailSaving(false);
     }
   }
 
@@ -438,6 +475,62 @@ export function ProfileForm({ user, ladderPrefs }: Props) {
           </div>
         </form>
       </Section>
+
+      {/* ── Availability (active ladder players only) ── */}
+      {ladderPrefs?.isActive && (
+        <Section
+          title="Availability"
+          description="Mark yourself as away if you are unavailable for matches. Other players will not be able to challenge you until you mark yourself as available again."
+        >
+          <div className="space-y-4">
+            {/* Current status indicator */}
+            <div className="flex items-center gap-2.5">
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold border",
+                  availability === "AWAY"
+                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                    : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                )}
+              >
+                {availability === "AWAY" ? "Away" : "Available"}
+              </span>
+              <span className="text-sm text-gray-500">
+                {availability === "AWAY"
+                  ? "You are currently marked as away — players cannot challenge you."
+                  : "You are currently available to receive challenges."}
+              </span>
+            </div>
+
+            {availToast && (
+              <Toast
+                type={availToast.type}
+                message={availToast.message}
+                onDismiss={() => setAvailToast(null)}
+              />
+            )}
+
+            {/* Action button */}
+            {availability === "AWAY" ? (
+              <button
+                onClick={() => saveAvailability("AVAILABLE")}
+                disabled={availSaving}
+                className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+              >
+                {availSaving ? "Saving…" : "Mark as available"}
+              </button>
+            ) : (
+              <button
+                onClick={() => saveAvailability("AWAY")}
+                disabled={availSaving}
+                className="rounded-xl border border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-50 transition-colors"
+              >
+                {availSaving ? "Saving…" : "Mark as away"}
+              </button>
+            )}
+          </div>
+        </Section>
+      )}
 
       {/* ── Ladder visibility prefs (only if user is on ladder) ── */}
       {ladderPrefs !== null && (

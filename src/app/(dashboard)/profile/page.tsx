@@ -20,13 +20,18 @@ export default async function ProfilePage() {
 
   const ladderPlayer = await prisma.ladderPlayer.findUnique({
     where: { userId: session.user.id },
-    select: { showPhone: true, showEmail: true, status: true },
+    select: { showPhone: true, showEmail: true, status: true, availability: true },
   });
 
   // Only expose ladder prefs if the user is on the ladder (not REMOVED)
   const ladderPrefs =
     ladderPlayer && ladderPlayer.status !== "REMOVED"
-      ? { showPhone: ladderPlayer.showPhone, showEmail: ladderPlayer.showEmail }
+      ? {
+          showPhone: ladderPlayer.showPhone,
+          showEmail: ladderPlayer.showEmail,
+          availability: ladderPlayer.availability,
+          isActive: ladderPlayer.status === "ACTIVE",
+        }
       : null;
 
   return (

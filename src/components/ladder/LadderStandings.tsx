@@ -17,6 +17,7 @@ interface StandingRow {
   email: string | null;
   movement: number;
   form: ("W" | "L")[];
+  availability: string;
 }
 
 interface Props {
@@ -91,12 +92,13 @@ export function LadderStandings({
       <ul className="md:hidden space-y-1.5">
         {standings.map((player) => {
           const isMe = player.id === myLadderPlayer?.id;
+          const isAway = player.availability === "AWAY";
 
           let challengeState: ReturnType<typeof getChallengeState> | null = null;
           if (myLadderPlayer && isActiveLadderPlayer) {
             challengeState = getChallengeState(
               { id: myLadderPlayer.id, rank: myLadderPlayer.rank, status: "ACTIVE" },
-              { id: player.id, rank: player.rank },
+              { id: player.id, rank: player.rank, availability: player.availability },
               openChallenges
             );
           }
@@ -120,7 +122,7 @@ export function LadderStandings({
                 <RankBadge rank={player.rank} isMe={isMe} />
               </div>
 
-              {/* Col 2 — avatar + name + form dots */}
+              {/* Col 2 — avatar + name + away badge + form dots */}
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Avatar
                   name={player.name}
@@ -144,6 +146,11 @@ export function LadderStandings({
                     {isMe && (
                       <span className="inline-flex items-center rounded-full bg-brand-100 px-1.5 py-px text-[10px] font-semibold text-brand-700 border border-brand-200 flex-shrink-0 leading-none">
                         You
+                      </span>
+                    )}
+                    {isAway && !isMe && (
+                      <span className="inline-flex items-center rounded-full bg-amber-50 px-1.5 py-px text-[10px] font-semibold text-amber-700 border border-amber-200 flex-shrink-0 leading-none">
+                        Away
                       </span>
                     )}
                   </div>
@@ -203,14 +210,15 @@ export function LadderStandings({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {standings.map((player, idx) => {
+            {standings.map((player) => {
               const isMe = player.id === myLadderPlayer?.id;
+              const isAway = player.availability === "AWAY";
 
               let challengeState: ReturnType<typeof getChallengeState> | null = null;
               if (myLadderPlayer && isActiveLadderPlayer) {
                 challengeState = getChallengeState(
                   { id: myLadderPlayer.id, rank: myLadderPlayer.rank, status: "ACTIVE" },
-                  { id: player.id, rank: player.rank },
+                  { id: player.id, rank: player.rank, availability: player.availability },
                   openChallenges
                 );
               }
@@ -260,6 +268,11 @@ export function LadderStandings({
                           {isMe && (
                             <span className="inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700 border border-brand-200">
                               You
+                            </span>
+                          )}
+                          {isAway && !isMe && (
+                            <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200">
+                              Away
                             </span>
                           )}
                         </div>
@@ -435,6 +448,10 @@ function ChallengeStatePill({
       label: "Active challenge",
       cls: "bg-blue-50 text-blue-700 border-blue-200",
     },
+    away: {
+      label: "Away",
+      cls: "bg-amber-50 text-amber-700 border-amber-200",
+    },
     self: { label: "", cls: "" },
   };
 
@@ -466,6 +483,7 @@ function MobileStateLabel({
     "has-open-outgoing":   { label: "Pending",   cls: "text-amber-600" },
     "target-has-incoming": { label: "Challenged",cls: "text-gray-500" },
     "already-challenged":  { label: "Active",    cls: "text-blue-600" },
+    away:                  { label: "Away",       cls: "text-amber-600" },
     self:                  { label: "",           cls: "" },
   };
 

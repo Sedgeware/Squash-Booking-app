@@ -219,7 +219,8 @@ export type ChallengeState =
   | "too-far"            // target is more than 3 places above
   | "has-open-outgoing"  // challenger already has an open outgoing challenge
   | "target-has-incoming"// target already has an open incoming challenge
-  | "already-challenged";// open challenge exists between these two
+  | "already-challenged" // open challenge exists between these two
+  | "away";              // target has marked themselves as away/unavailable
 
 interface OpenChallenge {
   challengerId: string;
@@ -230,12 +231,12 @@ interface OpenChallenge {
  * Compute the challenge state for a specific (challenger, target) pair.
  *
  * @param myPlayer        The challenging player's record.
- * @param targetPlayer    The target player's record.
+ * @param targetPlayer    The target player's record. Pass `availability` when known.
  * @param openChallenges  All open (PENDING | ACCEPTED) challenges on the ladder.
  */
 export function getChallengeState(
   myPlayer: { id: string; rank: number; status: string } | null,
-  targetPlayer: { id: string; rank: number },
+  targetPlayer: { id: string; rank: number; availability?: string },
   openChallenges: OpenChallenge[]
 ): ChallengeState {
   if (!myPlayer || myPlayer.status !== "ACTIVE") return "not-above";
@@ -245,6 +246,10 @@ export function getChallengeState(
   const diff = myPlayer.rank - targetPlayer.rank;
   if (diff <= 0) return "not-above";
   if (diff > 3) return "too-far";
+
+  // Target has marked themselves unavailable — checked after range so the
+  // "away" state only surfaces for players you'd otherwise be eligible to challenge
+  if (targetPlayer.availability === "AWAY") return "away";
 
   // Open challenge between these two (either direction)
   const hasExisting = openChallenges.some(
