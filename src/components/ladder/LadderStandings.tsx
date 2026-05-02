@@ -87,7 +87,92 @@ export function LadderStandings({
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
+      {/* ── Mobile card list (hidden on md+) ─────────────────────────────── */}
+      <ul className="md:hidden space-y-2">
+        {standings.map((player) => {
+          const isMe = player.id === myLadderPlayer?.id;
+
+          let challengeState: ReturnType<typeof getChallengeState> | null = null;
+          if (myLadderPlayer && isActiveLadderPlayer) {
+            challengeState = getChallengeState(
+              { id: myLadderPlayer.id, rank: myLadderPlayer.rank, status: "ACTIVE" },
+              { id: player.id, rank: player.rank },
+              openChallenges
+            );
+          }
+
+          return (
+            <li
+              key={player.id}
+              className={cn(
+                "rounded-2xl border shadow-sm px-4 py-3 flex items-center gap-3",
+                isMe
+                  ? "bg-brand-50 border-brand-200"
+                  : "bg-white border-gray-100"
+              )}
+            >
+              {/* Movement + rank */}
+              <div className="flex flex-col items-center gap-1 flex-shrink-0 w-8">
+                <MovementBadge movement={player.movement} />
+                <RankBadge rank={player.rank} isMe={isMe} />
+              </div>
+
+              {/* Avatar + name + form */}
+              <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                <Avatar
+                  name={player.name}
+                  avatarUrl={player.avatarUrl}
+                  size="xs"
+                  className="flex-shrink-0"
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Link
+                      href={`/ladder/player/${player.id}`}
+                      className={cn(
+                        "text-sm font-semibold hover:underline underline-offset-2 transition-colors truncate",
+                        isMe
+                          ? "text-brand-700 hover:text-brand-800"
+                          : "text-gray-800 hover:text-brand-600"
+                      )}
+                    >
+                      {player.name}
+                    </Link>
+                    {isMe && (
+                      <span className="inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700 border border-brand-200 flex-shrink-0">
+                        You
+                      </span>
+                    )}
+                  </div>
+                  <FormDots form={player.form} />
+                </div>
+              </div>
+
+              {/* Challenge action */}
+              {isActiveLadderPlayer && (
+                <div className="flex-shrink-0">
+                  {isMe ? (
+                    <span className="text-xs text-gray-300">—</span>
+                  ) : challengeState === "challengeable" ? (
+                    <button
+                      onClick={() => handleChallenge(player.id)}
+                      disabled={actionLoading === player.id}
+                      className="rounded-full bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-50 transition-colors shadow-sm"
+                    >
+                      {actionLoading === player.id ? "…" : "Challenge"}
+                    </button>
+                  ) : challengeState ? (
+                    <ChallengeStatePill state={challengeState} />
+                  ) : null}
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+
+      {/* ── Desktop / tablet table (hidden below md) ──────────────────────── */}
+      <div className="hidden md:block bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
         <table className="min-w-full">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100">
@@ -221,7 +306,7 @@ export function LadderStandings({
             })}
           </tbody>
         </table>
-      </div>
+      </div>{/* end desktop table wrapper */}
 
       {!isLoggedIn && (
         <p className="text-xs text-gray-400 text-center pt-1">
