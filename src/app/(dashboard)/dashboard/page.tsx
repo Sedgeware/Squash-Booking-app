@@ -123,8 +123,11 @@ export default async function DashboardPage() {
       ),
     }));
 
-    playerAbove = neighbours.find((p) => p.rank === ladderPlayer.rank! - 1) ?? null;
-    playerBelow = neighbours.find((p) => p.rank === ladderPlayer.rank! + 1) ?? null;
+    const rankedNeighbours = neighbours.filter(
+      (p): p is typeof p & { rank: number } => p.rank !== null
+    );
+    playerAbove = rankedNeighbours.find((p) => p.rank === ladderPlayer.rank! - 1) ?? null;
+    playerBelow = rankedNeighbours.find((p) => p.rank === ladderPlayer.rank! + 1) ?? null;
   }
 
   // ── Admin summary ─────────────────────────────────────────────────────────
