@@ -88,7 +88,7 @@ export function LadderStandings({
       )}
 
       {/* ── Mobile card list (hidden on md+) ─────────────────────────────── */}
-      <ul className="md:hidden space-y-2">
+      <ul className="md:hidden space-y-1.5">
         {standings.map((player) => {
           const isMe = player.id === myLadderPlayer?.id;
 
@@ -105,20 +105,23 @@ export function LadderStandings({
             <li
               key={player.id}
               className={cn(
-                "rounded-2xl border shadow-sm px-4 py-3 flex items-center gap-3",
+                "rounded-xl border shadow-sm px-3 py-2.5 flex items-center gap-3",
                 isMe
                   ? "bg-brand-50 border-brand-200"
                   : "bg-white border-gray-100"
               )}
             >
-              {/* Movement + rank */}
-              <div className="flex flex-col items-center gap-1 flex-shrink-0 w-8">
-                <MovementBadge movement={player.movement} />
+              {/* Col 1 — movement indicator beside rank circle */}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {/* Fixed-width wrapper keeps rank circle from jumping */}
+                <span className="w-5 flex items-center justify-center">
+                  <MovementBadge movement={player.movement} />
+                </span>
                 <RankBadge rank={player.rank} isMe={isMe} />
               </div>
 
-              {/* Avatar + name + form */}
-              <div className="flex items-center gap-2.5 flex-1 min-w-0">
+              {/* Col 2 — avatar + name + form dots */}
+              <div className="flex items-center gap-2 flex-1 min-w-0">
                 <Avatar
                   name={player.name}
                   avatarUrl={player.avatarUrl}
@@ -126,7 +129,7 @@ export function LadderStandings({
                   className="flex-shrink-0"
                 />
                 <div className="min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="flex items-center gap-1.5">
                     <Link
                       href={`/ladder/player/${player.id}`}
                       className={cn(
@@ -139,7 +142,7 @@ export function LadderStandings({
                       {player.name}
                     </Link>
                     {isMe && (
-                      <span className="inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700 border border-brand-200 flex-shrink-0">
+                      <span className="inline-flex items-center rounded-full bg-brand-100 px-1.5 py-px text-[10px] font-semibold text-brand-700 border border-brand-200 flex-shrink-0 leading-none">
                         You
                       </span>
                     )}
@@ -148,12 +151,10 @@ export function LadderStandings({
                 </div>
               </div>
 
-              {/* Challenge action */}
+              {/* Col 3 — challenge action (text labels, no pill borders on mobile) */}
               {isActiveLadderPlayer && (
-                <div className="flex-shrink-0">
-                  {isMe ? (
-                    <span className="text-xs text-gray-300">—</span>
-                  ) : challengeState === "challengeable" ? (
+                <div className="flex-shrink-0 text-right">
+                  {isMe ? null : challengeState === "challengeable" ? (
                     <button
                       onClick={() => handleChallenge(player.id)}
                       disabled={actionLoading === player.id}
@@ -162,7 +163,7 @@ export function LadderStandings({
                       {actionLoading === player.id ? "…" : "Challenge"}
                     </button>
                   ) : challengeState ? (
-                    <ChallengeStatePill state={challengeState} />
+                    <MobileStateLabel state={challengeState} />
                   ) : null}
                 </div>
               )}
@@ -406,7 +407,7 @@ function FormDots({ form }: { form: ("W" | "L")[] }) {
   );
 }
 
-// ─── Challenge state pill ─────────────────────────────────────────────────────
+// ─── Challenge state pill (desktop table) ────────────────────────────────────
 
 function ChallengeStatePill({
   state,
@@ -449,5 +450,29 @@ function ChallengeStatePill({
     >
       {pill.label}
     </span>
+  );
+}
+
+// ─── Mobile state label (plain text, no pill border) ─────────────────────────
+
+function MobileStateLabel({
+  state,
+}: {
+  state: ReturnType<typeof getChallengeState>;
+}) {
+  const map: Record<string, { label: string; cls: string }> = {
+    "not-above":           { label: "Below you", cls: "text-gray-400" },
+    "too-far":             { label: "Too far",   cls: "text-gray-400" },
+    "has-open-outgoing":   { label: "Pending",   cls: "text-amber-600" },
+    "target-has-incoming": { label: "Challenged",cls: "text-gray-500" },
+    "already-challenged":  { label: "Active",    cls: "text-blue-600" },
+    self:                  { label: "",           cls: "" },
+  };
+
+  const item = map[state];
+  if (!item?.label) return null;
+
+  return (
+    <span className={cn("text-xs font-medium", item.cls)}>{item.label}</span>
   );
 }
