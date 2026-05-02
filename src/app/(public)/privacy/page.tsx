@@ -21,13 +21,14 @@ export default function PrivacyPage() {
       <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-3">
         <h2 className="text-base font-semibold text-gray-800">Who we are</h2>
         <p className="text-sm text-gray-600 leading-relaxed">
-          This app is operated by Tamworth Squash Club (&ldquo;we&rdquo;, &ldquo;us&rdquo;, or
-          &ldquo;our&rdquo;). We are the data controller responsible for your personal information
-          collected through this website.
+          This application is independently built and operated by the site owner
+          (&ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;). It is not owned or operated
+          by Tamworth Squash Club. The site owner acts as the data controller responsible for
+          personal information collected through this website.
         </p>
         <p className="text-sm text-gray-600 leading-relaxed">
           This policy applies to personal data collected when you create an account, use the
-          ladder, or otherwise interact with the Tamworth Squash Ladder application.
+          ladder, or otherwise interact with this application.
         </p>
       </section>
 
@@ -217,8 +218,7 @@ export default function PrivacyPage() {
         <h2 className="text-base font-semibold text-gray-800">Contact us</h2>
         <p className="text-sm text-gray-600 leading-relaxed">
           For any questions about this Privacy Policy, or to make a request regarding your personal
-          data, please contact the club admin by emailing the address shown in the app, or by
-          speaking to a club administrator directly.
+          data, please contact the site owner and admin via the email address shown in the app.
         </p>
         <p className="text-sm text-gray-600 leading-relaxed">
           If you are not satisfied with how we handle your request, you have the right to lodge a
