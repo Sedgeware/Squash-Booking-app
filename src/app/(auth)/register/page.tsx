@@ -7,6 +7,7 @@ import Link from "next/link";
 export default function RegisterPage() {
   const router = useRouter();
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -26,13 +27,17 @@ export default function RegisterPage() {
       setError("Password must be at least 8 characters.");
       return;
     }
+    if (!agreedToPrivacy) {
+      setError("You must agree to the Privacy Policy to create an account.");
+      return;
+    }
 
     setLoading(true);
 
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: form.name, email: form.email, password: form.password }),
+      body: JSON.stringify({ name: form.name, email: form.email, password: form.password, agreedToPrivacy }),
     });
 
     const data = await res.json();
@@ -101,6 +106,31 @@ export default function RegisterPage() {
             placeholder="••••••••"
             className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
+        </div>
+
+        {/* Privacy Policy agreement */}
+        <div className="flex items-start gap-3">
+          <input
+            id="agreedToPrivacy"
+            type="checkbox"
+            checked={agreedToPrivacy}
+            onChange={(e) => {
+              setAgreedToPrivacy(e.target.checked);
+              if (e.target.checked) setError("");
+            }}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 flex-shrink-0"
+          />
+          <label htmlFor="agreedToPrivacy" className="text-sm text-gray-600 leading-snug">
+            I have read and agree to the{" "}
+            <Link
+              href="/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-brand-600 hover:text-brand-700 underline underline-offset-2"
+            >
+              Privacy Policy
+            </Link>
+          </label>
         </div>
 
         {error && (

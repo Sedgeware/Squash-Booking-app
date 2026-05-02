@@ -7,10 +7,22 @@ import { sendVerificationEmail } from "@/lib/email";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, email, password } = body as { name: string; email: string; password: string };
+    const { name, email, password, agreedToPrivacy } = body as {
+      name: string;
+      email: string;
+      password: string;
+      agreedToPrivacy?: boolean;
+    };
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: "All fields are required." }, { status: 400 });
+    }
+
+    if (!agreedToPrivacy) {
+      return NextResponse.json(
+        { error: "You must agree to the Privacy Policy to create an account." },
+        { status: 400 }
+      );
     }
 
     if (password.length < 8) {

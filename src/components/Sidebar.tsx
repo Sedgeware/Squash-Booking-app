@@ -136,6 +136,16 @@ function SidebarContent({
             Sign in
           </Link>
         )}
+
+        <div className="mt-3 text-center">
+          <Link
+            href="/privacy"
+            onClick={onNav}
+            className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
+          >
+            Privacy Policy
+          </Link>
+        </div>
       </div>
     </>
   );
