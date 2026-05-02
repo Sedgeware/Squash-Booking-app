@@ -1,3 +1,4 @@
+import React from "react";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -173,7 +174,7 @@ export default async function DashboardPage() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-8 max-w-3xl">
+    <div className="space-y-10 max-w-3xl">
       {/* ── Header ── */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
@@ -194,16 +195,19 @@ export default async function DashboardPage() {
             value={adminSummary.pendingCount}
             href="/admin/ladder"
             urgent={adminSummary.pendingCount > 0}
+            icon={<ClockIcon />}
           />
           <AdminStatCard
             label="Active players"
             value={adminSummary.activeCount}
             href="/ladder"
+            icon={<UsersIcon />}
           />
           <AdminStatCard
             label="Challenges this week"
             value={adminSummary.recentChallengeCount}
             href="/admin/ladder"
+            icon={<BoltIcon />}
           />
         </div>
       )}
@@ -212,7 +216,7 @@ export default async function DashboardPage() {
       {isActiveLadder && ladderPlayer && (
         <>
           {/* Rank hero */}
-          <div className="bg-white rounded-2xl border border-brand-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-brand-200 shadow-md overflow-hidden">
             <div className="px-6 py-5 flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
@@ -226,13 +230,13 @@ export default async function DashboardPage() {
               <div className="flex gap-3">
                 <Link
                   href="/ladder"
-                  className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
+                  className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 hover:shadow active:scale-95 transition-all duration-150"
                 >
                   View ladder
                 </Link>
                 <Link
                   href="/ladder/my-challenges"
-                  className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 hover:border-gray-300 active:scale-95 transition-all duration-150"
                 >
                   My challenges
                 </Link>
@@ -272,14 +276,14 @@ export default async function DashboardPage() {
           {(playerAbove || playerBelow) && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
               <div className="px-6 py-4 border-b border-gray-100">
-                <h2 className="font-semibold text-gray-800">Around you</h2>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <h2 className="font-semibold text-gray-900">Around you</h2>
+                <p className="text-xs text-gray-500 mt-0.5">
                   Your immediate neighbours on the ladder
                 </p>
               </div>
               <ul className="divide-y divide-gray-50">
                 {playerAbove && (
-                  <li className="px-6 py-3.5 flex items-center justify-between">
+                  <li className="px-6 py-3.5 flex items-center justify-between hover:bg-gray-50 transition-colors">
                     <div className="flex items-center gap-3">
                       <Avatar
                         name={playerAbove.user.name}
@@ -319,7 +323,7 @@ export default async function DashboardPage() {
                 </li>
 
                 {playerBelow && (
-                  <li className="px-6 py-3.5 flex items-center justify-between">
+                  <li className="px-6 py-3.5 flex items-center justify-between hover:bg-gray-50 transition-colors">
                     <div className="flex items-center gap-3">
                       <Avatar
                         name={playerBelow.user.name}
@@ -347,14 +351,14 @@ export default async function DashboardPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div>
-                <h2 className="font-semibold text-gray-800">Who you can challenge</h2>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <h2 className="font-semibold text-gray-900">Who you can challenge</h2>
+                <p className="text-xs text-gray-500 mt-0.5">
                   Players ranked up to 3 places above you
                 </p>
               </div>
               <Link
                 href="/ladder"
-                className="text-xs font-medium text-brand-600 hover:underline"
+                className="text-xs font-medium text-brand-600 hover:underline transition-colors"
               >
                 Full ladder →
               </Link>
@@ -369,7 +373,7 @@ export default async function DashboardPage() {
                 {challengeablePlayers.map((p) => (
                   <li
                     key={p.id}
-                    className="px-6 py-3.5 flex items-center justify-between"
+                    className="px-6 py-3.5 flex items-center justify-between hover:bg-gray-50/80 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <Avatar name={p.name} avatarUrl={p.avatarUrl} size="sm" />
@@ -398,7 +402,7 @@ export default async function DashboardPage() {
           {/* Ladder intro hero */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-brand-600">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-brand-600 shadow-sm">
                 <TrophyIcon className="h-6 w-6 text-white" />
               </div>
               <div>
@@ -431,7 +435,7 @@ export default async function DashboardPage() {
               <div className="pt-2">
                 <Link
                   href="/ladder"
-                  className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
+                  className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 active:scale-95 transition-all duration-150"
                 >
                   Join the ladder →
                 </Link>
@@ -455,7 +459,7 @@ export default async function DashboardPage() {
               <div className="pt-2 flex items-center gap-3">
                 <Link
                   href="/ladder"
-                  className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
+                  className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 active:scale-95 transition-all duration-150"
                 >
                   Re-join ladder →
                 </Link>
@@ -471,7 +475,7 @@ export default async function DashboardPage() {
 
           <Link
             href="/ladder"
-            className="inline-flex items-center gap-2 text-sm font-medium text-brand-600 hover:underline"
+            className="inline-flex items-center gap-2 text-sm font-medium text-brand-600 hover:underline transition-colors"
           >
             View current standings →
           </Link>
@@ -482,11 +486,11 @@ export default async function DashboardPage() {
       {feed.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-800">Recent ladder activity</h2>
+            <h2 className="font-semibold text-gray-900">Recent ladder activity</h2>
           </div>
           <ul className="divide-y divide-gray-50">
             {feed.map((item: ActivityFeedItem) => (
-              <li key={item.id} className="px-6 py-3.5 flex items-start gap-3">
+              <li key={item.id} className="px-6 py-3.5 flex items-start gap-3 hover:bg-gray-50/50 transition-colors">
                 <span
                   className={cn(
                     "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold",
@@ -593,25 +597,35 @@ function AdminStatCard({
   value,
   href,
   urgent,
+  icon,
 }: {
   label: string;
   value: number;
   href: string;
   urgent?: boolean;
+  icon?: React.ReactNode;
 }) {
+  const isUrgent = urgent && value > 0;
   return (
     <Link
       href={href}
       className={cn(
-        "block bg-white rounded-2xl border shadow-sm p-4 hover:shadow-md transition-shadow",
-        urgent && value > 0 ? "border-amber-200" : "border-gray-100"
+        "block bg-white rounded-2xl border shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150",
+        isUrgent ? "border-amber-200" : "border-gray-100"
       )}
     >
-      <p className="text-xs font-medium text-gray-500">{label}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-medium text-gray-500">{label}</p>
+        {icon && (
+          <span className={cn("flex-shrink-0", isUrgent ? "text-amber-500" : "text-gray-300")}>
+            {icon}
+          </span>
+        )}
+      </div>
       <p
         className={cn(
-          "text-3xl font-black mt-1",
-          urgent && value > 0 ? "text-amber-600" : "text-gray-900"
+          "text-3xl font-black mt-1.5",
+          isUrgent ? "text-amber-600" : "text-gray-900"
         )}
       >
         {value}
@@ -633,14 +647,14 @@ function RankMovementBadge({ movement }: { movement: number | null }) {
 
   if (movement > 0) {
     return (
-      <p className="mt-1.5 text-xs font-semibold text-green-600">
+      <p className="mt-1.5 text-[11px] font-medium text-emerald-600">
         ↑ {movement} place{movement !== 1 ? "s" : ""} in the last 30 days
       </p>
     );
   }
 
   return (
-    <p className="mt-1.5 text-xs font-semibold text-red-500">
+    <p className="mt-1.5 text-[11px] font-medium text-rose-400">
       ↓ {Math.abs(movement)} place{Math.abs(movement) !== 1 ? "s" : ""} in the last 30 days
     </p>
   );
@@ -650,6 +664,30 @@ function TrophyIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M8 21h8m-4-4v4M7 3H4a1 1 0 00-1 1v4c0 3.314 2.686 6 6 6h.5M17 3h3a1 1 0 011 1v4c0 3.314-2.686 6-6 6h-.5M12 3v10" />
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2m6-2a10 10 0 11-20 0 10 10 0 0120 0z" />
+    </svg>
+  );
+}
+
+function UsersIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+}
+
+function BoltIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
     </svg>
   );
 }
