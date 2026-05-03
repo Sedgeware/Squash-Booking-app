@@ -245,6 +245,43 @@ export async function sendVerificationEmail({
   });
 }
 
+/** Sent when a user requests a password reset. */
+export async function sendPasswordResetEmail({
+  to,
+  name,
+  rawToken,
+}: {
+  to: string;
+  name: string;
+  rawToken: string; // the plain token — embedded in the link, never logged or stored
+}): Promise<void> {
+  const resetUrl = `${APP_URL}/reset-password?token=${rawToken}`;
+
+  const body = `
+    <h2 style="margin:0 0 16px;font-size:20px;color:#111827;">Reset your password</h2>
+    <p style="margin:0 0 8px;font-size:15px;color:#374151;">Hi ${name},</p>
+    <p style="margin:0 0 16px;font-size:15px;color:#374151;">
+      You requested a password reset for your Rankd account.
+      Click the button below to set a new password.
+    </p>
+    <p style="margin:0;font-size:13px;color:#6b7280;">
+      This link will expire in <strong>1 hour</strong>. If you didn&apos;t request a reset,
+      you can safely ignore this email — your password will not change.
+    </p>
+  `;
+
+  await send({
+    to,
+    subject: "Reset your Rankd password",
+    html: baseTemplate({
+      preheader: "Reset your Rankd password — link expires in 1 hour",
+      body,
+      ctaUrl: resetUrl,
+      ctaLabel: "Reset password",
+    }),
+  });
+}
+
 /** Sent to a new user after they create an account. */
 export async function sendWelcomeEmail({
   to,

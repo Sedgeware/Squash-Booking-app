@@ -25,6 +25,9 @@ model User {
   // Ladder relations
   ladderPlayer          LadderPlayer?  @relation("UserToLadderPlayer")
   approvedLadderPlayers LadderPlayer[] @relation("LadderApprovedBy")
+
+  // Password reset
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Membership {
@@ -110,6 +113,20 @@ model AppSetting {
   key       String   @id   // e.g. "bookingsEnabled"
   value     String         // stored as string: "true" / "false"
   updatedAt DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Password reset tokens (one-time, hashed, 1-hour TTL)
+// ---------------------------------------------------------------------------
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique  // SHA-256 of the raw URL token — raw token is never stored
+  expiresAt DateTime
+  usedAt    DateTime?           // null = unused, set on successful reset
+  createdAt DateTime  @default(now())
 }
 
 model LadderHistory {
