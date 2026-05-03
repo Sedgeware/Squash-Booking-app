@@ -35,7 +35,7 @@ function RankdLogo({ className }: { className?: string }) {
     <img
       src="/brand/rankd-logo.png"
       alt="Rankd"
-      className={className}
+      className={`bg-transparent${className ? ` ${className}` : ""}`}
       draggable={false}
     />
   );
@@ -194,7 +194,7 @@ export function Sidebar({ bookingsEnabled = true, membershipsEnabled = true, use
       <aside className="hidden md:flex h-full w-64 flex-col shrink-0" style={{ backgroundColor: "#0B1220" }}>
         {/* Logo header */}
         <div className="flex items-center px-5 py-5 border-b border-white/10 mb-2 flex-shrink-0">
-          <RankdLogo className="h-8 w-auto" />
+          <RankdLogo className="h-10 w-auto object-contain bg-transparent" />
         </div>
         <SidebarContent {...sharedContentProps} />
       </aside>
@@ -204,7 +204,7 @@ export function Sidebar({ bookingsEnabled = true, membershipsEnabled = true, use
         className="md:hidden fixed top-0 inset-x-0 z-30 h-14 flex items-center justify-between px-4 border-b border-white/10"
         style={{ backgroundColor: "#0B1220" }}
       >
-        <RankdLogo className="h-7 w-auto" />
+        <RankdLogo className="h-10 w-auto object-contain bg-transparent" />
         <button
           onClick={() => setMobileOpen(true)}
           aria-label="Open menu"
@@ -230,7 +230,7 @@ export function Sidebar({ bookingsEnabled = true, membershipsEnabled = true, use
           >
             {/* Drawer header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 flex-shrink-0">
-              <RankdLogo className="h-7 w-auto" />
+              <RankdLogo className="h-10 w-auto object-contain bg-transparent" />
               <button
                 onClick={() => setMobileOpen(false)}
                 aria-label="Close menu"
