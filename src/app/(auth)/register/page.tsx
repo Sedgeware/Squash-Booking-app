@@ -51,9 +51,23 @@ export default function RegisterPage() {
   }
 
   return (
-    <>
-      <h2 className="text-xl font-bold text-gray-900 mb-1">Create account</h2>
-      <p className="text-sm text-gray-500 mb-6">Join the Tamworth Squash Ladder today</p>
+    <div className="w-full max-w-md">
+      {/* ── Logo + context block ─────────────────────────────────────────── */}
+      <div className="flex flex-col items-center text-center mb-6 space-y-1">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/brand/rankd-logo.png"
+          alt="Rankd"
+          className="h-10 w-auto object-contain bg-transparent mb-4"
+          draggable={false}
+        />
+        <h1 className="text-white text-2xl font-semibold">Create account</h1>
+        <p className="text-gray-300 text-sm font-medium">Tamworth Squash Ladder</p>
+        <p className="text-gray-500 text-xs">Powered by Rankd</p>
+      </div>
+
+      {/* ── Register card ────────────────────────────────────────────────── */}
+      <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -65,7 +79,7 @@ export default function RegisterPage() {
             onChange={handleChange}
             required
             placeholder="Jane Smith"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600"
           />
         </div>
 
@@ -78,7 +92,7 @@ export default function RegisterPage() {
             onChange={handleChange}
             required
             placeholder="you@example.com"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600"
           />
         </div>
 
@@ -91,7 +105,7 @@ export default function RegisterPage() {
             onChange={handleChange}
             required
             placeholder="Min. 8 characters"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600"
           />
         </div>
 
@@ -104,7 +118,7 @@ export default function RegisterPage() {
             onChange={handleChange}
             required
             placeholder="••••••••"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600"
           />
         </div>
 
@@ -142,7 +156,7 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          className="w-full rounded-lg bg-[#22C55E] px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-[#16A34A] active:scale-95 focus:outline-none focus:ring-2 focus:ring-brand-600 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
         >
           {loading ? "Creating account…" : "Create account"}
         </button>
@@ -154,6 +168,7 @@ export default function RegisterPage() {
           Sign in
         </Link>
       </p>
-    </>
+      </div>
+    </div>
   );
 }
