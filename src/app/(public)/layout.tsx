@@ -9,7 +9,7 @@ export default async function PublicLayout({ children }: { children: React.React
   const bookingsEnabled = settingBool(await getSetting("bookingsEnabled"));
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-100">
       <Sidebar bookingsEnabled={bookingsEnabled} />
       <main className="flex-1 overflow-y-auto">
         <div className="pt-14 md:pt-0 p-4 sm:p-6 lg:p-8">{children}</div>

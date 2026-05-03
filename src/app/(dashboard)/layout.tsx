@@ -23,7 +23,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const membershipsEnabled = settingBool(membershipsRaw);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-100">
       <Sidebar
         bookingsEnabled={bookingsEnabled}
         membershipsEnabled={membershipsEnabled}

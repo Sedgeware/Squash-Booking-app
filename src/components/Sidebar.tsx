@@ -27,6 +27,20 @@ interface SidebarProps {
   avatarUrl?: string | null;
 }
 
+// ─── Logo ─────────────────────────────────────────────────────────────────────
+
+function RankdLogo({ className }: { className?: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/brand/rankd-logo.png"
+      alt="Rankd"
+      className={className}
+      draggable={false}
+    />
+  );
+}
+
 // ─── Shared nav content (used in both desktop sidebar and mobile drawer) ───────
 
 function SidebarContent({
@@ -100,7 +114,8 @@ function SidebarContent({
         )}
       </nav>
 
-      <div className="border-t border-gray-700 px-4 py-4 flex-shrink-0">
+      {/* ── User area ──────────────────────────────────────────────────────── */}
+      <div className="border-t border-white/10 px-4 py-4 flex-shrink-0">
         {isLoggedIn ? (
           <>
             <Link
@@ -108,10 +123,10 @@ function SidebarContent({
               onClick={onNav}
               className={cn(
                 "flex items-center gap-3 rounded-xl px-2 py-2 mb-2 transition-colors group",
-                pathname === "/profile" ? "bg-gray-800" : "hover:bg-gray-800"
+                pathname === "/profile" ? "bg-white/10" : "hover:bg-white/10"
               )}
             >
-              <Avatar name={displayName} avatarUrl={avatarUrl} size="sm" className="border-gray-600" />
+              <Avatar name={displayName} avatarUrl={avatarUrl} size="sm" className="border-white/20" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate leading-tight">{displayName}</p>
                 <p className="text-xs text-gray-400 truncate leading-tight">{displayEmail}</p>
@@ -121,7 +136,7 @@ function SidebarContent({
 
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
             >
               <LogoutIcon className="h-4 w-4" />
               Sign out
@@ -173,42 +188,27 @@ export function Sidebar({ bookingsEnabled = true, membershipsEnabled = true, use
     displayName, displayEmail, avatarUrl,
   };
 
-  const logoIcon = (
-    <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <circle cx="12" cy="12" r="3" strokeWidth="2" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-        d="M12 2a10 10 0 100 20A10 10 0 0012 2z" />
-    </svg>
-  );
-
   return (
     <>
       {/* ── Desktop sidebar (md and up) ───────────────────────────────────── */}
-      <aside className="hidden md:flex h-full w-64 flex-col bg-gray-900 text-white shrink-0">
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-700 flex-shrink-0">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600">
-            {logoIcon}
-          </div>
-          <div>
-            <p className="text-sm font-bold leading-tight">Tamworth</p>
-            <p className="text-xs text-gray-400 leading-tight">Squash Club</p>
-          </div>
+      <aside className="hidden md:flex h-full w-64 flex-col shrink-0" style={{ backgroundColor: "#0B1220" }}>
+        {/* Logo header */}
+        <div className="flex items-center px-5 py-5 border-b border-white/10 mb-2 flex-shrink-0">
+          <RankdLogo className="h-8 w-auto" />
         </div>
         <SidebarContent {...sharedContentProps} />
       </aside>
 
       {/* ── Mobile top bar (below md) ─────────────────────────────────────── */}
-      <div className="md:hidden fixed top-0 inset-x-0 z-30 h-14 flex items-center justify-between bg-gray-900 px-4 border-b border-gray-800">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-600">
-            {logoIcon}
-          </div>
-          <span className="text-sm font-bold text-white">Tamworth SC</span>
-        </div>
+      <div
+        className="md:hidden fixed top-0 inset-x-0 z-30 h-14 flex items-center justify-between px-4 border-b border-white/10"
+        style={{ backgroundColor: "#0B1220" }}
+      >
+        <RankdLogo className="h-7 w-auto" />
         <button
           onClick={() => setMobileOpen(true)}
           aria-label="Open menu"
-          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+          className="rounded-lg p-1.5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
         >
           <MenuIcon />
         </button>
@@ -224,22 +224,17 @@ export function Sidebar({ bookingsEnabled = true, membershipsEnabled = true, use
             aria-hidden="true"
           />
           {/* Drawer */}
-          <div className="md:hidden fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-gray-900 text-white shadow-2xl">
+          <div
+            className="md:hidden fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col text-white shadow-2xl"
+            style={{ backgroundColor: "#0B1220" }}
+          >
             {/* Drawer header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600">
-                  {logoIcon}
-                </div>
-                <div>
-                  <p className="text-sm font-bold leading-tight">Tamworth</p>
-                  <p className="text-xs text-gray-400 leading-tight">Squash Club</p>
-                </div>
-              </div>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 flex-shrink-0">
+              <RankdLogo className="h-7 w-auto" />
               <button
                 onClick={() => setMobileOpen(false)}
                 aria-label="Close menu"
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
               >
                 <CloseIcon />
               </button>
@@ -269,7 +264,9 @@ function NavLink({
       onClick={onClick}
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-        active ? "bg-brand-700 text-white" : "text-gray-400 hover:bg-gray-800 hover:text-white"
+        active
+          ? "bg-brand-600 text-white"
+          : "text-gray-300 hover:bg-white/10 hover:text-white"
       )}
     >
       {icon}
@@ -305,13 +302,6 @@ function CalendarIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-    </svg>
-  );
-}
-function CreditCardIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
     </svg>
   );
 }

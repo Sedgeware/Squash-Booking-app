@@ -6,11 +6,11 @@ import { SessionProvider } from "@/components/providers/SessionProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Tamworth Squash Ladder",
-  description: "Join the Tamworth Squash Ladder, challenge players, and climb the rankings.",
+  title: "Rankd",
+  description: "Climb. Compete. Connect. Challenge players, climb the rankings, and compete at the top.",
   openGraph: {
-    title: "Tamworth Squash Ladder",
-    description: "Join the Tamworth Squash Ladder, challenge players, and climb the rankings.",
+    title: "Rankd",
+    description: "Climb. Compete. Connect. Challenge players, climb the rankings, and compete at the top.",
     type: "website",
   },
 };
