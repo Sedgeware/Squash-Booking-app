@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -126,7 +127,6 @@ export default async function LadderPage() {
       </div>
 
       {/* Status banners */}
-      {userId && !myLadderPlayer && <JoinLadderCard />}
 
       {myLadderPlayer?.status === "PENDING" && (
         <div className="rounded-2xl bg-amber-50 border border-amber-200 px-6 py-5">
@@ -192,61 +192,109 @@ export default async function LadderPage() {
         </div>
       )}
 
-      {/* Main content — standings + feed side by side on wide screens */}
-      {/* lg:items-start keeps the feed from stretching to standings height on desktop.   */}
-      {/* On mobile (flex-col) we omit items-start so the standings column stretches to  */}
-      {/* full width (align-items: stretch is the default), matching other page cards.    */}
-      <div className="flex flex-col lg:flex-row gap-6 lg:items-start">
-        {/* Standings table */}
-        <div className="flex-1 min-w-0">
-          <LadderStandings
-            standings={standings}
-            myLadderPlayer={
-              isActiveLadderPlayer && myLadderPlayer
-                ? { id: myLadderPlayer.id, rank: myLadderPlayer.rank! }
-                : null
-            }
-            openChallenges={openChallenges}
-            isLoggedIn={!!userId}
-            isActiveLadderPlayer={isActiveLadderPlayer}
-          />
-        </div>
-
-        {/* Activity feed — sidebar on wide screens */}
-        {feed.length > 0 && (
-          <div className="w-full lg:w-72 flex-shrink-0">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-              <div className="px-5 py-4 border-b border-gray-100">
-                <h2 className="font-semibold text-gray-800 text-sm">
-                  Recent activity
-                </h2>
-              </div>
-              <ul className="divide-y divide-gray-50">
-                {feed.map((item) => (
-                  <li key={item.id} className="px-5 py-3.5 flex items-start gap-3">
-                    <span
-                      className={cn(
-                        "inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold",
-                        item.iconCls
-                      )}
-                    >
-                      {item.icon}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-600 leading-snug">
-                        {item.text}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {timeAgo(item.timestamp)}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
+      {/* Main content — gated: only active ladder players see standings */}
+      {isActiveLadderPlayer ? (
+        // ── Active player: standings + activity feed ──────────────────────────
+        // lg:items-start keeps the feed from stretching to standings height on
+        // desktop. On mobile (flex-col) the default stretch fills full width.
+        <div className="flex flex-col lg:flex-row gap-6 lg:items-start">
+          {/* Standings table */}
+          <div className="flex-1 min-w-0">
+            <LadderStandings
+              standings={standings}
+              myLadderPlayer={
+                isActiveLadderPlayer && myLadderPlayer
+                  ? { id: myLadderPlayer.id, rank: myLadderPlayer.rank! }
+                  : null
+              }
+              openChallenges={openChallenges}
+              isLoggedIn={!!userId}
+              isActiveLadderPlayer={isActiveLadderPlayer}
+            />
           </div>
-        )}
-      </div>
+
+          {/* Activity feed — sidebar on wide screens */}
+          {feed.length > 0 && (
+            <div className="w-full lg:w-72 flex-shrink-0">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+                <div className="px-5 py-4 border-b border-gray-100">
+                  <h2 className="font-semibold text-gray-800 text-sm">
+                    Recent activity
+                  </h2>
+                </div>
+                <ul className="divide-y divide-gray-50">
+                  {feed.map((item) => (
+                    <li key={item.id} className="px-5 py-3.5 flex items-start gap-3">
+                      <span
+                        className={cn(
+                          "inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                          item.iconCls
+                        )}
+                      >
+                        {item.icon}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-600 leading-snug">
+                          {item.text}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {timeAgo(item.timestamp)}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        // ── Non-active: standings are hidden ─────────────────────────────────
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-10 flex flex-col items-center text-center gap-2">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 mb-1">
+              <svg
+                className="h-5 w-5 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
+              </svg>
+            </div>
+            <p className="font-semibold text-gray-800">
+              You are not currently on the ladder.
+            </p>
+            <p className="text-sm text-gray-500">
+              Join the ladder to view standings and challenge players.
+            </p>
+          </div>
+
+          {/* Join CTA for users who have never joined */}
+          {userId && !myLadderPlayer && (
+            <div className="border-t border-gray-100 px-6 pb-6">
+              <JoinLadderCard />
+            </div>
+          )}
+
+          {/* Sign-in prompt for guests */}
+          {!userId && (
+            <div className="border-t border-gray-100 px-6 py-5 flex justify-center">
+              <Link
+                href="/login"
+                className="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 active:scale-95 transition-all duration-150"
+              >
+                Sign in to join
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
